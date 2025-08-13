@@ -6,35 +6,16 @@
   <title></title>
   <style>
     html,body{height:100%;margin:0;background:#000;overflow:hidden;-webkit-tap-highlight-color:transparent}
-    .stage{
-      position:fixed; inset:0;
-      padding: env(safe-area-inset-top,0) env(safe-area-inset-right,0)
-               env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);
-    }
-    #bg{
-      position:absolute; inset:0;
-      width:100vw; height:100vh;
-      object-fit:cover; object-position:center;
-      user-select:none; pointer-events:none;
-    }
+    .stage{position:fixed;inset:0;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+    #bg{position:absolute;inset:0;width:100vw;height:100vh;object-fit:cover;object-position:center;user-select:none;pointer-events:none}
     .glass{
-      position:absolute;
-      width:44px; height:68px;
-      border:2px solid #d4aa00; border-radius:6px;
-      background:rgba(255,255,255,.04);
-      overflow:hidden;
-      box-shadow:0 0 6px rgba(0,0,0,.55);
-      z-index:2;
-      touch-action:manipulation;
-      cursor:pointer;
+      position:absolute;width:46px;height:70px;border:2px solid #d4aa00;border-radius:6px;
+      background:rgba(255,255,255,.04);overflow:hidden;box-shadow:0 0 6px rgba(0,0,0,.55);
+      z-index:2;touch-action:manipulation;cursor:pointer
     }
-    .fill{
-      position:absolute; left:0; bottom:0;
-      width:100%;
-      background:linear-gradient(180deg,#f7e17c,#e1b12c);
-      height:100%;
-      transition:height .25s ease;
-    }
+    .glass.low{border-color:#ffb300}
+    .glass.empty{border-color:#ef5350}
+    .fill{position:absolute;left:0;bottom:0;width:100%;height:100%;background:linear-gradient(180deg,#f7e17c,#e1b12c);transition:height .22s ease}
   </style>
 </head>
 <body>
@@ -42,73 +23,73 @@
     <img id="bg" alt=""
          src="https://raw.githubusercontent.com/Eddy-sudo-alt/K-bes-Panik/refs/heads/main/D865D92A-F21B-4602-A575-BC42B2B79A98.png"/>
 
-    <!-- Gläser -->
-    <div class="glass" data-id="0"><div class="fill"></div></div>
-    <div class="glass" data-id="1"><div class="fill"></div></div>
-    <div class="glass" data-id="2"><div class="fill"></div></div>
+    <!-- Nur EIN Glas -->
+    <div class="glass" id="g1"><div class="fill"></div></div>
   </div>
 
   <script>
-    // Neue Koordinaten: auf den drei markierten Tischen
-    const points = [
-      { x: 30, y: 62 }, // linker Tisch
-      { x: 51, y: 57 }, // mittlerer Tisch
-      { x: 71, y: 62 }  // rechter Tisch
-    ];
+    // === Zielposition (in % des Bildes) – nach deinem roten Marker ===
+    const point = { x: 53, y: 72 }; // bei Bedarf feinjustieren: x/y um ±1 ändern
 
-    const glasses = [...document.querySelectorAll('.glass')].map(el => ({
-      el,
-      fillEl: el.querySelector('.fill'),
+    // === Glas-Logik: leert sich automatisch, Tap/Click füllt sofort ===
+    const g = {
+      el: document.getElementById('g1'),
+      fillEl: document.querySelector('#g1 .fill'),
       pct: 100,
-      speed: 3 + Math.random() * 3 // 3–6% pro Sekunde entleeren
-    }));
+      speed: 4.2,     // % pro Sekunde (nur nach unten)
+      jitter: 0
+    };
 
-    // Klick/Touch -> wieder auffüllen
-    glasses.forEach(g => {
-      const fillUp = () => { g.pct = 100; g.fillEl.style.height = g.pct + '%'; };
-      g.el.addEventListener('click', fillUp);
-      g.el.addEventListener('touchend', fillUp, { passive: true });
-    });
+    // Tippen/Klicken => sofort voll
+    const fillUp = ()=>{ g.pct = 100; render(); };
+    g.el.addEventListener('click', fillUp);
+    g.el.addEventListener('touchend', fillUp, {passive:true});
 
     // Entleerungsschleife
     let last = performance.now();
-    function loop(now) {
-      const dt = Math.min(1000, now - last) / 1000;
-      last = now;
-      for (const g of glasses) {
-        g.pct = Math.max(0, g.pct - g.speed * dt);
-        g.fillEl.style.height = g.pct + '%';
-      }
+    function loop(now){
+      const dt = Math.min(1000, now - last) / 1000; last = now;
+      const eff = Math.max(0, g.speed + g.jitter);
+      g.pct = Math.max(0, g.pct - eff * dt);
+      render();
       requestAnimationFrame(loop);
     }
-    requestAnimationFrame(loop);
 
-    // Positionierung auf dem Bild
-    const stage = document.getElementById('stage');
-    const bg = document.getElementById('bg');
-
-    function positionGlasses() {
-      const sw = stage.clientWidth, sh = stage.clientHeight;
-      const iw = bg.naturalWidth || 1024, ih = bg.naturalHeight || 1024;
-      const scale = Math.max(sw / iw, sh / ih);
-      const dw = iw * scale, dh = ih * scale;
-      const offX = (sw - dw) / 2;
-      const offY = (sh - dh) / 2;
-
-      glasses.forEach((g, idx) => {
-        const p = points[idx];
-        const w = g.el.offsetWidth, h = g.el.offsetHeight;
-        const x = offX + (p.x / 100) * dw;
-        const y = offY + (p.y / 100) * dh;
-        g.el.style.left = (x - w / 2) + 'px';
-        g.el.style.top = (y - h * 0.65) + 'px';
-      });
+    function render(){
+      g.fillEl.style.height = g.pct + '%';
+      g.el.classList.toggle('low',   g.pct <= 35 && g.pct > 0);
+      g.el.classList.toggle('empty', g.pct <= 0);
     }
 
-    if (bg.complete) positionGlasses();
-    else bg.addEventListener('load', positionGlasses);
-    window.addEventListener('resize', positionGlasses, { passive: true });
-    window.addEventListener('orientationchange', positionGlasses, { passive: true });
+    // kleine zufällige Schwankungen (wirkt natürlicher)
+    function reshuffleJitter(){
+      g.jitter = (Math.random()*0.4 - 0.2) * g.speed; // ±20 %
+      setTimeout(reshuffleJitter, 7000 + Math.random()*5000);
+    }
+    reshuffleJitter();
+
+    // === Exakte Positionierung über dem cover-Bild ===
+    const stage = document.getElementById('stage');
+    const bg = document.getElementById('bg');
+    function positionGlass(){
+      const sw = stage.clientWidth, sh = stage.clientHeight;
+      const iw = bg.naturalWidth || 1024, ih = bg.naturalHeight || 1024;
+      const scale = Math.max(sw/iw, sh/ih);
+      const dw = iw*scale, dh = ih*scale;
+      const offX = (sw - dw)/2, offY = (sh - dh)/2;
+      const w = g.el.offsetWidth, h = g.el.offsetHeight;
+      const x = offX + (point.x/100)*dw;
+      const y = offY + (point.y/100)*dh;
+      // leicht nach oben versetzen, damit es "auf dem Tisch" wirkt
+      g.el.style.left = (x - w/2) + 'px';
+      g.el.style.top  = (y - h*0.65) + 'px';
+    }
+
+    if (bg.complete) positionGlass(); else bg.addEventListener('load', positionGlass);
+    addEventListener('resize', positionGlass, {passive:true});
+    addEventListener('orientationchange', positionGlass, {passive:true});
+
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
