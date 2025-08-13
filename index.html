@@ -1,95 +1,101 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title></title>
-  <style>
-    html,body{height:100%;margin:0;background:#000;overflow:hidden;-webkit-tap-highlight-color:transparent}
-    .stage{position:fixed;inset:0;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
-    #bg{position:absolute;inset:0;width:100vw;height:100vh;object-fit:cover;object-position:center;user-select:none;pointer-events:none}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title></title>
+<style>
+  html,body{height:100%;margin:0;background:#000;overflow:hidden;-webkit-tap-highlight-color:transparent}
+  .stage{position:fixed;inset:0;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+  #bg{position:absolute;inset:0;width:100vw;height:100vh;object-fit:cover;object-position:center;user-select:none;pointer-events:none}
 
-    /* Geldanzeige */
-    .money{
-      position:absolute; top:12px; left:12px; z-index:3;
-      background:rgba(0,0,0,.45);
-      color:#ffd700;
-      border:1px solid rgba(255,215,0,0.4);
-      border-radius:10px;
-      padding:8px 14px;
-      font:600 16px/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      backdrop-filter: blur(2px);
-      box-shadow:0 2px 6px rgba(0,0,0,0.4);
-    }
+  /* Geldanzeige */
+  .money{
+    position:absolute; top:12px; left:12px; z-index:4;
+    background:rgba(0,0,0,.45);
+    color:#ffd700;
+    border:1px solid rgba(255,215,0,0.4);
+    border-radius:10px;
+    padding:8px 14px;
+    font:600 16px/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    backdrop-filter: blur(2px);
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+  }
 
-    /* Effekte (+0,20 € & Emojis) */
-    .fx{
-      position:absolute; z-index:4;
-      font:700 20px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      text-shadow:0 1px 2px rgba(0,0,0,.5);
-      pointer-events:none;
-      opacity:0;
-      transform: translate(-50%, 0) translateZ(0);
-      animation: rise 900ms ease-out forwards;
-    }
-    .fx.moneyFx{ color:#ffd700; font-size:16px; }
-    .fx.emojiFx{ font-size:26px; }
-    @keyframes rise{
-      0%   { opacity:0; transform: translate(-50%, 10px); }
-      12%  { opacity:1; transform: translate(-50%, 0); }
-      70%  { opacity:1; transform: translate(-50%, -40px); }
-      100% { opacity:0; transform: translate(-50%, -60px); }
-    }
+  /* Effekte (+€, TIP, Emojis, LevelUp) */
+  .fx{
+    position:absolute; z-index:5;
+    font:700 20px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    text-shadow:0 1px 2px rgba(0,0,0,.5);
+    pointer-events:none; opacity:0;
+    transform: translate(-50%,0) translateZ(0);
+    animation: rise 900ms ease-out forwards;
+  }
+  .fx.money{ color:#ffd700; font-size:16px; }  /* normal Geld */
+  .fx.tip  { color:#56e39f; font-size:18px; }  /* TIP in grün */
+  .fx.emoji{ font-size:26px; }
+  @keyframes rise{
+    0%{opacity:0;transform:translate(-50%,10px)}
+    12%{opacity:1;transform:translate(-50%,0)}
+    70%{opacity:1;transform:translate(-50%,-40px)}
+    100%{opacity:0;transform:translate(-50%,-60px)}
+  }
 
-    /* Glas */
-    .glass{
-      position:absolute;width:46px;height:70px;border:2px solid #d4aa00;border-radius:6px;
-      background:rgba(255,255,255,.04);overflow:hidden;box-shadow:0 0 6px rgba(0,0,0,.55);
-      z-index:2;touch-action:manipulation;cursor:pointer; transition:filter .2s ease, opacity .2s ease, border-color .2s ease;
-    }
-    .glass.low{border-color:#ffb300}
-    .glass.empty{border-color:#ef5350}
-    .glass.disabled{
-      opacity:.5; filter:grayscale(100%);
-      border-color:#666; cursor:not-allowed;
-      pointer-events:none; /* blockt weitere Klicks sicher ab */
-    }
-    .fill{position:absolute;left:0;bottom:0;width:100%;height:100%;background:linear-gradient(180deg,#f7e17c,#e1b12c);transition:height .22s ease}
+  /* Banner beim Freischalten */
+  .levelup{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    z-index:6; background:rgba(0,0,0,.55); color:#ffd700;
+    border:1px solid rgba(255,215,0,.45); border-radius:12px;
+    padding:10px 18px; font:700 16px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    box-shadow:0 2px 10px rgba(0,0,0,.5); display:none;
+    animation: pop 900ms ease-out;
+  }
+  @keyframes pop{
+    0%{transform:translateX(-50%) scale(.8);opacity:0}
+    25%{transform:translateX(-50%) scale(1.05);opacity:1}
+    100%{transform:translateX(-50%) scale(1);opacity:1}
+  }
 
-    /* Popup (Abmahnungen/Kündigung + Gast verweigert) */
-    .popup{
-      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-      background:rgba(0,0,0,0.5); z-index:5;
-    }
-    .popup-content{
-      background:#1b1f2a; color:#fff; padding:20px 24px; border-radius:10px; text-align:center;
-      max-width:80%; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      box-shadow:0 4px 20px rgba(0,0,0,0.6);
-    }
-    .popup-content button{
-      margin-top:12px; padding:8px 14px; border:none; border-radius:6px;
-      background:#f6c356; color:#141821; font-weight:bold; cursor:pointer;
-    }
+  /* Gläser */
+  .glass{
+    position:absolute;width:46px;height:70px;border:2px solid #d4aa00;border-radius:6px;
+    background:rgba(255,255,255,.04);overflow:hidden;box-shadow:0 0 6px rgba(0,0,0,.55);
+    z-index:3;touch-action:manipulation;cursor:pointer; transition:border-color .2s ease;
+  }
+  .glass.low{border-color:#ffb300}
+  .glass.empty{border-color:#ef5350}
+  .glass.hidden{display:none}
+  .glass.popin{animation:popin .45s ease-out}
+  @keyframes popin{
+    0%{transform:scale(.7);opacity:0}
+    70%{transform:scale(1.08);opacity:1}
+    100%{transform:scale(1);opacity:1}
+  }
+  .fill{position:absolute;left:0;bottom:0;width:100%;height:100%;
+    background:linear-gradient(180deg,#f7e17c,#e1b12c);transition:height .22s ease}
+  /* Popups (Abmahnung/Kündigung) */
+  .popup{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:7}
+  .popup-content{background:#1b1f2a;color:#fff;padding:20px 24px;border-radius:10px;text-align:center;max-width:80%;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.6)}
+  .popup-content button{margin-top:12px;padding:8px 14px;border:none;border-radius:6px;background:#f6c356;color:#141821;font-weight:bold;cursor:pointer}
 
-    /* Game Over */
-    .gameover{
-      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-      background:#000; color:#e8ecf1; z-index:6;
-      font:700 20px/1.3 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      text-align:center; padding:24px;
-    }
-  </style>
+  /* Game Over */
+  .gameover{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#000;color:#e8ecf1;z-index:8;
+    font:700 20px/1.3 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;text-align:center;padding:24px}
+</style>
 </head>
 <body>
   <div class="stage" id="stage">
     <img id="bg" alt=""
          src="https://raw.githubusercontent.com/Eddy-sudo-alt/K-bes-Panik/refs/heads/main/D865D92A-F21B-4602-A575-BC42B2B79A98.png"/>
 
-    <!-- Geldanzeige -->
     <div class="money" id="money">0,00 €</div>
+    <div class="levelup" id="levelup">Level Up – Neues Glas!</div>
 
-    <!-- Glas -->
-    <div class="glass" id="g1"><div class="fill"></div></div>
+    <!-- Glas 1 (start) -->
+    <div class="glass" id="g0"><div class="fill"></div></div>
+    <!-- Glas 2 (freischaltet später) -->
+    <div class="glass hidden" id="g1"><div class="fill"></div></div>
   </div>
 
   <!-- Popup -->
@@ -105,155 +111,192 @@
     Game Over<br/>du musst zum Arbeitsamt.
   </div>
 
-  <script>
-    const point = { x: 53, y: 69 };
+<script>
+/* ---------- Einstellungen ---------- */
+const POSITIONS = [
+  { x: 53, y: 69 }, // Glas 1 (wie gehabt)
+  { x: 71, y: 62 }  // Glas 2 (deine rote Markierung) ← ggf. x/y um ±1% anpassen
+];
+const BASE_EURO = 0.25;
+const TIP_BONUS = 0.10; // +10%
+const UNLOCK_GOOD_FILLS = 3; // kumulativ: 3x im unteren Drittel
+/* ----------------------------------- */
 
-    const g = {
-      el: document.getElementById('g1'),
-      fillEl: document.querySelector('#g1 .fill'),
-      pct: 100,
-      speed: 4.2,
-      jitter: 0,
-      warnedThisCycle: false
-    };
+const stage = document.getElementById('stage');
+const bg = document.getElementById('bg');
+const moneyEl = document.getElementById('money');
+const levelEl = document.getElementById('levelup');
+const popup = document.getElementById('popup');
+const popupText = document.getElementById('popupText');
+const popupBtn = document.getElementById('popupBtn');
+const gameover = document.getElementById('gameover');
 
-    let strikes = 0;       // Abmahnungen → bei 3 Kündigung
-    let ended = false;     // Spiel beendet?
-    let money = 0;         // Euro
-    let angryCount = 0;    // Anzahl 😠 beim Auffüllen
-    let gastBedient = true;// darf noch bedient werden?
+/* Sound: Einschenken */
+const sFill = new Audio('fill.mp3');
+sFill.volume = 0.6;
 
-    const moneyEl  = document.getElementById('money');
-    const popup    = document.getElementById('popup');
-    const popupTxt = document.getElementById('popupText');
-    const popupBtn = document.getElementById('popupBtn');
-    const gameover = document.getElementById('gameover');
+/* Geldstand */
+let money = 0;
+function euro(v){ return v.toFixed(2).replace('.', ',') + ' €'; }
+function updateMoney(){ moneyEl.textContent = euro(money); }
 
-    function showPopup(text){ popupTxt.textContent = text; popup.style.display = 'flex'; }
-    function hidePopup(){ popup.style.display = 'none'; }
+/* Abmahnungen global */
+let strikes = 0;
+let ended = false;
 
-    popupBtn.addEventListener('click', ()=>{
-      if (strikes >= 3){
-        hidePopup();
-        gameover.style.display = 'flex';
-        ended = true;
-      } else {
-        hidePopup();
-      }
-    });
+/* Freischaltzähler: kumulativ unteres Drittel */
+let goodFills = 0;
+let secondUnlocked = false;
 
-    function updateMoney(){
-      moneyEl.textContent = money.toFixed(2).replace('.', ',') + ' €';
+/* Hilfsfunktionen für Effekte */
+function spawnFx(text, className, x, y){
+  const s = document.createElement('div');
+  s.className = 'fx ' + className;
+  s.textContent = text;
+  s.style.left = x + 'px';
+  s.style.top  = y + 'px';
+  document.body.appendChild(s);
+  setTimeout(()=>s.remove(), 950);
+}
+function fxAtGlass(glassEl, text, cls, offsetY=0){
+  const r = glassEl.getBoundingClientRect();
+  spawnFx(text, cls, r.left + r.width/2, r.top + r.height*0.2 + offsetY);
+}
+function showBanner(){
+  levelEl.style.display = 'block';
+  setTimeout(()=> levelEl.style.display = 'none', 1200);
+}
+function showPopup(text){ popupText.textContent = text; popup.style.display = 'flex'; }
+function hidePopup(){ popup.style.display = 'none'; }
+popupBtn.addEventListener('click', ()=>{
+  if (strikes >= 3){ hidePopup(); gameover.style.display='flex'; ended=true; }
+  else hidePopup();
+});
+
+/* Glas-Objekte */
+function createGlass(el, idx){
+  return {
+    idx,
+    el,
+    fillEl: el.querySelector('.fill'),
+    pct: 100,
+    speed: 4 + Math.random()*2.5, // 4–6.5 %/s
+    jitter: 0,
+    warnedThisCycle: false
+  };
+}
+const glasses = [
+  createGlass(document.getElementById('g0'), 0),
+  createGlass(document.getElementById('g1'), 1)
+];
+
+/* Positionierung exakt über cover-Bild */
+function positionGlasses(){
+  const sw = stage.clientWidth, sh = stage.clientHeight;
+  const iw = bg.naturalWidth || 1024, ih = bg.naturalHeight || 1024;
+  const scale = Math.max(sw/iw, sh/ih);
+  const dw = iw*scale, dh = ih*scale;
+  const offX = (sw-dw)/2, offY = (sh-dh)/2;
+
+  glasses.forEach((g,i)=>{
+    const p = POSITIONS[i];
+    const w = g.el.offsetWidth, h = g.el.offsetHeight;
+    const x = offX + (p.x/100)*dw;
+    const y = offY + (p.y/100)*dh;
+    g.el.style.left = (x - w/2) + 'px';
+    g.el.style.top  = (y - h*0.65) + 'px';
+  });
+}
+if (bg.complete) positionGlasses(); else bg.addEventListener('load', positionGlasses);
+addEventListener('resize', positionGlasses, {passive:true});
+addEventListener('orientationchange', positionGlasses, {passive:true});
+
+/* Render */
+function render(g){
+  g.fillEl.style.height = g.pct + '%';
+  g.el.classList.toggle('low',   g.pct <= 35 && g.pct > 0);
+  g.el.classList.toggle('empty', g.pct <=  0);
+}
+
+/* Auffüllen-Logik */
+function handleFill(g){
+  if (ended) return;
+
+  const prev = g.pct;             // vorheriger Stand
+  g.pct = 100; g.warnedThisCycle = false;
+
+  // Sound immer beim Auffüllen
+  try { sFill.currentTime = 0; sFill.play(); } catch(_) {}
+
+  // Emoji + Geld/Abmahnung
+  if (prev <= 25){ // unteres Viertel → Bonus & 😀 + Fortschritt
+    const add = BASE_EURO * (1 + TIP_BONUS); // 0.275
+    money += add; updateMoney();
+    fxAtGlass(g.el, '+'+euro(add).replace(' €',' €'), 'tip', 0);
+    fxAtGlass(g.el, 'TIP', 'tip', -10);
+    fxAtGlass(g.el, '😀',  'emoji', -20);
+    goodFills++;
+    if (!secondUnlocked && goodFills >= UNLOCK_GOOD_FILLS){
+      // zweites Glas freischalten
+      secondUnlocked = true;
+      const g2 = glasses[1].el;
+      g2.classList.remove('hidden'); g2.classList.add('popin');
+      showBanner();
+      setTimeout(()=> g2.classList.remove('popin'), 500);
     }
+  } else if (prev <= 66){ // Mitte → 😐, kein Geld
+    fxAtGlass(g.el, '😐', 'emoji', -20);
+  } else { // oberes Drittel → 😠 + Abmahnung
+    fxAtGlass(g.el, '😠', 'emoji', -20);
+    strikes++;
+    if (strikes === 1) showPopup('Erste Abmahnung');
+    else if (strikes === 2) showPopup('Zweite Abmahnung');
+    else if (strikes >= 3) showPopup('Kündigung');
+  }
+  render(g);
+}
 
-    function spawnFx(text, className, x, y){
-      const s = document.createElement('div');
-      s.className = 'fx ' + className;
-      s.textContent = text;
-      s.style.left = x + 'px';
-      s.style.top  = y + 'px';
-      document.body.appendChild(s);
-      setTimeout(()=> s.remove(), 950);
+/* Pointer-Events für aktive Gläser */
+function wireGlass(g){
+  g.el.addEventListener('pointerup', ()=> handleFill(g));
+}
+wireGlass(glasses[0]); // Glas 1 sofort
+// Glas 2 erst nach Freischalten klickbar (Event ist schon dran, aber es ist hidden)
+wireGlass(glasses[1]);
+
+/* Entleerungs-Loop */
+let last = performance.now();
+function reshuffleJitter(g){
+  g.jitter = (Math.random()*0.4 - 0.2)*g.speed;
+  setTimeout(()=>reshuffleJitter(g), 7000 + Math.random()*5000);
+}
+glasses.forEach(reshuffleJitter);
+
+function loop(now){
+  if (ended) return;
+  const dt = Math.min(1000, now-last)/1000; last = now;
+
+  glasses.forEach(g=>{
+    if (g.el.classList.contains('hidden')) return; // nicht aktiv
+    g.pct = Math.max(0, g.pct - Math.max(0, g.speed + g.jitter)*dt);
+
+    // passiv: Abmahnung bei Leerstand (nur 1x pro Zyklus)
+    if (g.pct <= 0 && !g.warnedThisCycle){
+      g.warnedThisCycle = true;
+      strikes++;
+      if (strikes === 1) showPopup('Erste Abmahnung');
+      else if (strikes === 2) showPopup('Zweite Abmahnung');
+      else if (strikes >= 3) showPopup('Kündigung');
     }
+    render(g);
+  });
 
-    function moneyFxAtGlass(){
-      const rect = g.el.getBoundingClientRect();
-      spawnFx('+0,20 €', 'moneyFx', rect.left + rect.width/2, rect.top + rect.height*0.2);
-    }
-    function emojiFxAtGlass(emoji){
-      const rect = g.el.getBoundingClientRect();
-      spawnFx(emoji, 'emojiFx', rect.left + rect.width/2, rect.top - 10);
-    }
+  requestAnimationFrame(loop);
+}
 
-    // Auffüllen
-    const fillUp = ()=>{
-      if (ended || !gastBedient) return;
-
-      const prevPct = g.pct;  // Füllstand davor
-      g.pct = 100;
-      g.warnedThisCycle = false;
-
-      money += 0.20;          // genau einmal pro Auffüllen
-      updateMoney();
-      moneyFxAtGlass();
-
-      // Emoji-Bewertung
-      if (prevPct <= 33) {
-        emojiFxAtGlass('😀');
-      } else if (prevPct <= 66) {
-        emojiFxAtGlass('😐');
-      } else {
-        emojiFxAtGlass('😠');
-        angryCount++;
-        if (angryCount >= 3) {
-          gastBedient = false;                   // blockieren
-          g.el.classList.add('disabled');        // optisch deaktivieren
-          showPopup('Gast verweigert Bedienung'); // Info-Popup
-        }
-      }
-      render();
-    };
-    // nur EIN Event für Touch/Maus → keine Doppel-Gutschriften
-    g.el.addEventListener('pointerup', fillUp);
-
-    // Entleerungsschleife
-    let last = performance.now();
-    function loop(now){
-      if (ended) return;
-      const dt = Math.min(1000, now - last) / 1000; last = now;
-
-      g.pct = Math.max(0, g.pct - Math.max(0, g.speed + g.jitter) * dt);
-
-      // Abmahnungen bei Leerstand (nur einmal pro Zyklus)
-      if (g.pct <= 0 && !g.warnedThisCycle){
-        g.warnedThisCycle = true;
-        strikes++;
-        if (strikes === 1)      showPopup('Erste Abmahnung');
-        else if (strikes === 2) showPopup('Zweite Abmahnung');
-        else if (strikes >= 3)  showPopup('Kündigung');
-      }
-
-      render();
-      requestAnimationFrame(loop);
-    }
-
-    function render(){
-      g.fillEl.style.height = g.pct + '%';
-      g.el.classList.toggle('low',   g.pct <= 35 && g.pct > 0);
-      g.el.classList.toggle('empty', g.pct <=  0);
-      g.el.classList.toggle('disabled', !gastBedient); // visuelle Sperre
-    }
-
-    // leichte zufällige Schwankungen
-    function reshuffleJitter(){
-      if (ended) return;
-      g.jitter = (Math.random()*0.4 - 0.2) * g.speed;
-      setTimeout(reshuffleJitter, 7000 + Math.random()*5000);
-    }
-    reshuffleJitter();
-
-    // Glas an die exakte Stelle im Bild setzen
-    const stage = document.getElementById('stage');
-    const bg    = document.getElementById('bg');
-    function positionGlass(){
-      const sw = stage.clientWidth, sh = stage.clientHeight;
-      const iw = bg.naturalWidth || 1024, ih = bg.naturalHeight || 1024;
-      const scale = Math.max(sw/iw, sh/ih);
-      const dw = iw*scale, dh = ih*scale;
-      const offX = (sw - dw)/2, offY = (sh - dh)/2;
-      const w = g.el.offsetWidth, h = g.el.offsetHeight;
-      const x = offX + (point.x/100)*dw;
-      const y = offY + (point.y/100)*dh;
-      g.el.style.left = (x - w/2) + 'px';
-      g.el.style.top  = (y - h*0.65) + 'px';
-    }
-    if (bg.complete) positionGlass(); else bg.addEventListener('load', positionGlass);
-    addEventListener('resize', positionGlass, {passive:true});
-    addEventListener('orientationchange', positionGlass, {passive:true});
-
-    // Start
-    updateMoney();
-    requestAnimationFrame(loop);
-  </script>
+/* Start */
+updateMoney();
+requestAnimationFrame(loop);
+</script>
 </body>
 </html>
