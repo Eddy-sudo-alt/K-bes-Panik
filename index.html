@@ -5,77 +5,113 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title></title>
   <style>
-    html,body{
-      height:100%;
-      margin:0;
-      background:#000;
-      overflow:hidden;
-    }
-    .wrap{
-      position:fixed;
-      inset:0;
+    html,body{height:100%;margin:0;background:#000;overflow:hidden;-webkit-tap-highlight-color:transparent}
+    .stage{
+      position:fixed; inset:0;
       padding: env(safe-area-inset-top,0) env(safe-area-inset-right,0)
                env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);
-      display:block;
-      background:#000;
     }
-    .bg{
-      position:absolute;
-      inset:0;
-      background:center/cover no-repeat url("https://raw.githubusercontent.com/Eddy-sudo-alt/K-bes-Panik/refs/heads/main/D865D92A-F21B-4602-A575-BC42B2B79A98.png");
-      z-index:0;
+    /* Das Hintergrundbild als echtes <img>, damit wir exakt darüber positionieren können */
+    #bg{
+      position:absolute; inset:0;
+      width:100vw; height:100vh; object-fit:cover; object-position:center;
+      user-select:none; pointer-events:none;
     }
-
-    /* Biergläser */
     .glass{
-      position:absolute;
-      width:42px;
-      height:64px;
-      border:2px solid #d4aa00;
-      border-radius:5px;
-      background:rgba(255, 255, 255, 0.05);
-      overflow:hidden;
-      z-index:1;
-      box-shadow:0 0 4px rgba(0,0,0,0.5);
+      position:absolute; width:44px; height:68px; border:2px solid #d4aa00; border-radius:6px;
+      background:rgba(255,255,255,.04); overflow:hidden; box-shadow:0 0 6px rgba(0,0,0,.55);
+      z-index:2; touch-action:manipulation; cursor:pointer;
     }
     .fill{
-      position:absolute;
-      bottom:0;
-      left:0;
-      width:100%;
-      background:linear-gradient(to top, #f7e17c, #e1b12c);
-      transition:height 0.8s ease;
+      position:absolute; left:0; bottom:0; width:100%;
+      background:linear-gradient(180deg,#f7e17c,#e1b12c);
+      height:100%; transition:height .25s ease;
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="bg"></div>
+  <div class="stage" id="stage">
+    <img id="bg" alt=""
+         src="https://raw.githubusercontent.com/Eddy-sudo-alt/K-bes-Panik/refs/heads/main/D865D92A-F21B-4602-A575-BC42B2B79A98.png"/>
 
-    <!-- 3 Gläser auf den mittleren Tischen unter dem Kronleuchter -->
-    <div class="glass" style="top:52%; left:39%;">
-      <div class="fill" style="height:100%"></div>
-    </div>
-    <div class="glass" style="top:52%; left:49%;">
-      <div class="fill" style="height:100%"></div>
-    </div>
-    <div class="glass" style="top:52%; left:59%;">
-      <div class="fill" style="height:100%"></div>
-    </div>
+    <!-- Drei Gläser – Positionen kommen aus JS, damit sie auf jedem Screen exakt sitzen -->
+    <div class="glass" data-id="0"><div class="fill"></div></div>
+    <div class="glass" data-id="1"><div class="fill"></div></div>
+    <div class="glass" data-id="2"><div class="fill"></div></div>
   </div>
 
   <script>
-    const glasses = document.querySelectorAll('.glass');
+    // === 1) ZIEL-PUNKTE AUF DEM BILD (in Prozent der Bildbreite/-höhe) ===
+    // Diese Werte habe ich auf "die 3 mittleren Tische unter dem Kronleuchter" geschätzt.
+    // Feintuning ist superleicht: einfach x/y anpassen.
+    const points = [
+      { x: 36, y: 64 }, // linker mittlerer Tisch
+      { x: 50, y: 64 }, // mittlerer Tisch
+      { x: 64, y: 64 }, // rechter mittlerer Tisch
+    ];
 
-    function randomDrain(glass){
-      const fill = glass.querySelector('.fill');
-      const newHeight = Math.floor(Math.random() * 100); // 0-100%
-      fill.style.height = newHeight + '%';
-      const nextTime = Math.random() * 4000 + 2000; // 2-6 Sekunden
-      setTimeout(()=>randomDrain(glass), nextTime);
+    // === 2) DRAIN-LOGIK: nur leeren; Tippen füllt auf ===
+    const glasses = [...document.querySelectorAll('.glass')].map((el,i)=>({
+      el,
+      fillEl: el.querySelector('.fill'),
+      pct: 100,
+      // individuelle Geschwindigkeit (Prozent pro Sekunde)
+      speed: 3 + Math.random()*3, // 3–6 % pro Sekunde
+    }));
+
+    // Klicken/Tippen => sofort voll
+    glasses.forEach(g=>{
+      g.el.addEventListener('click', ()=>{ g.pct = 100; renderFill(g); });
+      g.el.addEventListener('touchend', ()=>{ g.pct = 100; renderFill(g); }, {passive:true});
+    });
+
+    // drain-Loop
+    let last = performance.now();
+    function loop(now){
+      const dt = Math.min(1000, now - last) / 1000; // Sek.
+      last = now;
+      for(const g of glasses){
+        g.pct = Math.max(0, g.pct - g.speed * dt); // nur nach unten
+        renderFill(g);
+      }
+      requestAnimationFrame(loop);
+    }
+    function renderFill(g){
+      g.fillEl.style.height = g.pct + '%';
     }
 
-    glasses.forEach(g => randomDrain(g));
+    // === 3) POSITIONIERUNG EXAKT ÜBER DEM BILD (auch mit object-fit: cover) ===
+    const stage = document.getElementById('stage');
+    const bg = document.getElementById('bg');
+
+    function positionGlasses(){
+      const sw = stage.clientWidth, sh = stage.clientHeight;
+      const iw = bg.naturalWidth || 1024, ih = bg.naturalHeight || 1024;
+      // cover: größter Maßstab, der Fläche füllt
+      const scale = Math.max(sw/iw, sh/ih);
+      const dw = iw*scale, dh = ih*scale;
+      const offsetX = (sw - dw)/2;
+      const offsetY = (sh - dh)/2;
+
+      glasses.forEach((g,idx)=>{
+        const p = points[idx];
+        // Pixelkoordinaten im sichtbaren Bild
+        const x = offsetX + (p.x/100) * dw;
+        const y = offsetY + (p.y/100) * dh;
+        // Glas mittig auf den Punkt setzen (leicht nach oben, damit es „auf dem Tisch“ wirkt)
+        const w = g.el.offsetWidth, h = g.el.offsetHeight;
+        g.el.style.left = (x - w/2) + 'px';
+        g.el.style.top  = (y - h*0.65) + 'px';
+      });
+    }
+
+    // Wenn Bild geladen wurde + bei Resize/Orientation neu positionieren
+    if (bg.complete) positionGlasses(); else bg.addEventListener('load', positionGlasses);
+    window.addEventListener('resize', positionGlasses, {passive:true});
+    window.addEventListener('orientationchange', positionGlasses, {passive:true});
+
+    // Start
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
