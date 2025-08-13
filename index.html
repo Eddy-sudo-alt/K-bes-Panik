@@ -16,23 +16,66 @@
       inset:0;
       padding: env(safe-area-inset-top,0) env(safe-area-inset-right,0)
                env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);
-      display:grid;
-      place-items:center;
+      display:block;
       background:#000;
     }
-    img{
-      display:block;
-      max-width:100%;
-      max-height:100%;
-      width:100vw;
-      height:100vh;
-      object-fit:cover;
+    .bg{
+      position:absolute;
+      inset:0;
+      background:center/cover no-repeat url("https://raw.githubusercontent.com/Eddy-sudo-alt/K-bes-Panik/refs/heads/main/D865D92A-F21B-4602-A575-BC42B2B79A98.png");
+      z-index:0;
+    }
+
+    /* Biergläser */
+    .glass{
+      position:absolute;
+      width:42px;
+      height:64px;
+      border:2px solid #d4aa00;
+      border-radius:5px;
+      background:rgba(255, 255, 255, 0.05);
+      overflow:hidden;
+      z-index:1;
+      box-shadow:0 0 4px rgba(0,0,0,0.5);
+    }
+    .fill{
+      position:absolute;
+      bottom:0;
+      left:0;
+      width:100%;
+      background:linear-gradient(to top, #f7e17c, #e1b12c);
+      transition:height 0.8s ease;
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <img src="https://raw.githubusercontent.com/Eddy-sudo-alt/K-bes-Panik/refs/heads/main/D865D92A-F21B-4602-A575-BC42B2B79A98.png" alt="" />
+    <div class="bg"></div>
+
+    <!-- 3 Gläser auf den mittleren Tischen unter dem Kronleuchter -->
+    <div class="glass" style="top:52%; left:39%;">
+      <div class="fill" style="height:100%"></div>
+    </div>
+    <div class="glass" style="top:52%; left:49%;">
+      <div class="fill" style="height:100%"></div>
+    </div>
+    <div class="glass" style="top:52%; left:59%;">
+      <div class="fill" style="height:100%"></div>
+    </div>
   </div>
+
+  <script>
+    const glasses = document.querySelectorAll('.glass');
+
+    function randomDrain(glass){
+      const fill = glass.querySelector('.fill');
+      const newHeight = Math.floor(Math.random() * 100); // 0-100%
+      fill.style.height = newHeight + '%';
+      const nextTime = Math.random() * 4000 + 2000; // 2-6 Sekunden
+      setTimeout(()=>randomDrain(glass), nextTime);
+    }
+
+    glasses.forEach(g => randomDrain(g));
+  </script>
 </body>
 </html>
