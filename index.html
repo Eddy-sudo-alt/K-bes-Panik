@@ -9,14 +9,6 @@
     .stage{position:fixed;inset:0;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
     #bg{position:absolute;inset:0;width:100vw;height:100vh;object-fit:cover;object-position:center;user-select:none;pointer-events:none}
 
-    /* HUD: 8h-Timer */
-    .hud{
-      position:absolute; top:12px; right:12px; z-index:3;
-      background:rgba(0,0,0,.45); color:#e8ecf1; border:1px solid rgba(255,255,255,.2);
-      border-radius:10px; padding:8px 12px; font:600 14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      backdrop-filter: blur(2px);
-    }
-
     /* Glas */
     .glass{
       position:absolute;width:46px;height:70px;border:2px solid #d4aa00;border-radius:6px;
@@ -27,7 +19,7 @@
     .glass.empty{border-color:#ef5350}
     .fill{position:absolute;left:0;bottom:0;width:100%;height:100%;background:linear-gradient(180deg,#f7e17c,#e1b12c);transition:height .22s ease}
 
-    /* Popup Abmahnung */
+    /* Abmahnungs-Popup */
     .popup{
       position:fixed; inset:0; display:none; align-items:center; justify-content:center;
       background:rgba(0,0,0,0.5); z-index:5;
@@ -42,7 +34,7 @@
       background:#f6c356; color:#141821; font-weight:bold; cursor:pointer;
     }
 
-    /* Game Over: schwarzer Bildschirm */
+    /* Game Over */
     .gameover{
       position:fixed; inset:0; display:none; align-items:center; justify-content:center;
       background:#000; color:#e8ecf1; z-index:6;
@@ -56,9 +48,7 @@
     <img id="bg" alt=""
          src="https://raw.githubusercontent.com/Eddy-sudo-alt/K-bes-Panik/refs/heads/main/D865D92A-F21B-4602-A575-BC42B2B79A98.png"/>
 
-    <div class="hud"><span id="timer">08:00:00</span></div>
-
-    <!-- Ein einziges Glas -->
+    <!-- Ein Glas -->
     <div class="glass" id="g1"><div class="fill"></div></div>
   </div>
 
@@ -70,13 +60,13 @@
     </div>
   </div>
 
-  <!-- Spielende -->
+  <!-- Schwarzer Endscreen -->
   <div class="gameover" id="gameover">
-    Du musst zum Arbeitsamt.
+    Game Over<br/>du musst zum Arbeitsamt.
   </div>
 
   <script>
-    // Position (etwas höher gesetzt)
+    // Position des Glases (dein Punkt, leicht nach oben gesetzt)
     const point = { x: 53, y: 69 };
 
     // Glas-Status
@@ -84,37 +74,42 @@
       el: document.getElementById('g1'),
       fillEl: document.querySelector('#g1 .fill'),
       pct: 100,
-      speed: 4.2,   // % pro Sekunde (nur leeren)
+      speed: 4.2,    // % pro Sekunde – nur Entleerung
       jitter: 0,
-      warnedThisCycle: false // wurde in diesem „Leer-Lauf“ schon gezählt?
+      warnedThisCycle: false
     };
 
-    // Abmahnungen / Spielende
-    let strikes = 0;
-    let ended = false;
+    let strikes = 0;      // 0,1,2 -> bei 3 = Kündigung
+    let ended   = false;  // Game Over?
 
-    const popup = document.getElementById('popup');
+    const popup     = document.getElementById('popup');
     const popupText = document.getElementById('popupText');
-    const popupBtn = document.getElementById('popupBtn');
-    const gameover = document.getElementById('gameover');
+    const popupBtn  = document.getElementById('popupBtn');
+    const gameover  = document.getElementById('gameover');
 
     function showPopup(text){
       popupText.textContent = text;
       popup.style.display = 'flex';
     }
-    popupBtn.addEventListener('click', ()=> { popup.style.display = 'none'; });
-
-    function gameOver(){
-      ended = true;
-      // Alles visuell anhalten
-      gameover.style.display = 'flex';
+    function hidePopup(){
+      popup.style.display = 'none';
     }
+    popupBtn.addEventListener('click', ()=>{
+      // Wenn gerade Kündigung angezeigt wurde -> jetzt Game Over zeigen
+      if (strikes >= 3){
+        hidePopup();
+        gameover.style.display = 'flex';
+        ended = true;
+      } else {
+        hidePopup();
+      }
+    });
 
-    // Tippen/Klicken -> füllt und setzt Zyklus zurück
+    // Tippen/Klicken => füllt und startet neuen Zyklus
     const fillUp = ()=>{
       if (ended) return;
       g.pct = 100;
-      g.warnedThisCycle = false; // neuer Zyklus beginnt
+      g.warnedThisCycle = false;
       render();
     };
     g.el.addEventListener('click', fillUp);
@@ -123,22 +118,22 @@
     // Entleerungs-Loop
     let last = performance.now();
     function loop(now){
-      if (ended) return; // nichts mehr tun
+      if (ended) return;
       const dt = Math.min(1000, now - last) / 1000; last = now;
 
-      if (!isTimerDone()){
-        const eff = Math.max(0, g.speed + g.jitter);
-        g.pct = Math.max(0, g.pct - eff * dt);
-        // Abmahnung nur einmal pro Leer-Zyklus auslösen
-        if (g.pct <= 0 && !g.warnedThisCycle){
-          g.warnedThisCycle = true;
-          strikes++;
-          if (strikes === 1)      showPopup('Erste Abmahnung');
-          else if (strikes === 2) showPopup('Zweite Abmahnung');
-          else if (strikes >= 3)  gameOver();
-        }
-        render();
+      const eff = Math.max(0, g.speed + g.jitter);
+      g.pct = Math.max(0, g.pct - eff * dt);
+
+      // Abmahnungen/Kündigung bei Leerstand (einmal pro Zyklus)
+      if (g.pct <= 0 && !g.warnedThisCycle){
+        g.warnedThisCycle = true;
+        strikes++;
+        if (strikes === 1)      showPopup('Erste Abmahnung');
+        else if (strikes === 2) showPopup('Zweite Abmahnung');
+        else if (strikes >= 3)  showPopup('Kündigung');
       }
+
+      render();
       requestAnimationFrame(loop);
     }
 
@@ -148,7 +143,7 @@
       g.el.classList.toggle('empty', g.pct <=  0);
     }
 
-    // kleine zufällige Schwankungen
+    // kleine zufällige Schwankungen (wirkt natürlicher)
     function reshuffleJitter(){
       if (ended) return;
       g.jitter = (Math.random()*0.4 - 0.2) * g.speed; // ±20 %
@@ -156,27 +151,9 @@
     }
     reshuffleJitter();
 
-    // 8h-Countdown (persistiert)
-    const DURATION_MS = 8 * 60 * 60 * 1000;
-    const LS_KEY_START = 'koebes_timer_start';
-    const timerEl = document.getElementById('timer');
-    function getStart(){ const v = localStorage.getItem(LS_KEY_START); return v ? parseInt(v,10) : null; }
-    function ensureStart(){ let t=getStart(); if(!t){ t=Date.now(); localStorage.setItem(LS_KEY_START,String(t)); } return t; }
-    function isTimerDone(){ const start = ensureStart(); return Date.now() - start >= DURATION_MS; }
-    function updateTimer(){
-      if (ended) return;
-      const start = ensureStart();
-      let remain = Math.max(0, DURATION_MS - (Date.now() - start));
-      const h = Math.floor(remain/3600000); remain %= 3600000;
-      const m = Math.floor(remain/60000);   remain %= 60000;
-      const s = Math.floor(remain/1000);
-      timerEl.textContent = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-      requestAnimationFrame(updateTimer);
-    }
-
-    // Exakte Position auf dem Bild (object-fit: cover)
+    // Exakte Position über dem cover-Bild
     const stage = document.getElementById('stage');
-    const bg = document.getElementById('bg');
+    const bg    = document.getElementById('bg');
     function positionGlass(){
       const sw = stage.clientWidth, sh = stage.clientHeight;
       const iw = bg.naturalWidth || 1024, ih = bg.naturalHeight || 1024;
@@ -195,7 +172,6 @@
 
     // Start
     requestAnimationFrame(loop);
-    requestAnimationFrame(updateTimer);
   </script>
 </body>
 </html>
