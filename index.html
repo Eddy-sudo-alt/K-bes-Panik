@@ -9,6 +9,38 @@
     .stage{position:fixed;inset:0;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
     #bg{position:absolute;inset:0;width:100vw;height:100vh;object-fit:cover;object-position:center;user-select:none;pointer-events:none}
 
+    /* Geldanzeige */
+    .money{
+      position:absolute; top:12px; left:12px; z-index:3;
+      background:rgba(0,0,0,.45);
+      color:#ffd700;
+      border:1px solid rgba(255,215,0,0.4);
+      border-radius:10px;
+      padding:8px 14px;
+      font:600 16px/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      backdrop-filter: blur(2px);
+      box-shadow:0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    /* Effekte (+0,20€ und Emoji) */
+    .fx{
+      position:absolute; z-index:4;
+      font:700 20px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      text-shadow:0 1px 2px rgba(0,0,0,.5);
+      pointer-events:none;
+      opacity:0;
+      transform: translate(-50%, 0) translateZ(0);
+      animation: rise 900ms ease-out forwards;
+    }
+    .fx.moneyFx{ color:#ffd700; font-size:16px; }
+    .fx.emojiFx{ font-size:26px; }
+    @keyframes rise{
+      0%   { opacity:0; transform: translate(-50%, 10px); }
+      12%  { opacity:1; transform: translate(-50%, 0); }
+      70%  { opacity:1; transform: translate(-50%, -40px); }
+      100% { opacity:0; transform: translate(-50%, -60px); }
+    }
+
     /* Glas */
     .glass{
       position:absolute;width:46px;height:70px;border:2px solid #d4aa00;border-radius:6px;
@@ -19,7 +51,7 @@
     .glass.empty{border-color:#ef5350}
     .fill{position:absolute;left:0;bottom:0;width:100%;height:100%;background:linear-gradient(180deg,#f7e17c,#e1b12c);transition:height .22s ease}
 
-    /* Abmahnungs-Popup */
+    /* Popups */
     .popup{
       position:fixed; inset:0; display:none; align-items:center; justify-content:center;
       background:rgba(0,0,0,0.5); z-index:5;
@@ -48,11 +80,14 @@
     <img id="bg" alt=""
          src="https://raw.githubusercontent.com/Eddy-sudo-alt/K-bes-Panik/refs/heads/main/D865D92A-F21B-4602-A575-BC42B2B79A98.png"/>
 
-    <!-- Ein Glas -->
+    <!-- Geldanzeige -->
+    <div class="money" id="money">0,00 €</div>
+
+    <!-- Glas -->
     <div class="glass" id="g1"><div class="fill"></div></div>
   </div>
 
-  <!-- Abmahnungs-Popup -->
+  <!-- Popup -->
   <div class="popup" id="popup">
     <div class="popup-content">
       <div id="popupText">Erste Abmahnung</div>
@@ -60,71 +95,91 @@
     </div>
   </div>
 
-  <!-- Schwarzer Endscreen -->
+  <!-- Game Over -->
   <div class="gameover" id="gameover">
     Game Over<br/>du musst zum Arbeitsamt.
   </div>
 
   <script>
-    // Position des Glases (dein Punkt, leicht nach oben gesetzt)
     const point = { x: 53, y: 69 };
-
-    // Glas-Status
     const g = {
       el: document.getElementById('g1'),
       fillEl: document.querySelector('#g1 .fill'),
       pct: 100,
-      speed: 4.2,    // % pro Sekunde – nur Entleerung
+      speed: 4.2,
       jitter: 0,
       warnedThisCycle: false
     };
-
-    let strikes = 0;      // 0,1,2 -> bei 3 = Kündigung
-    let ended   = false;  // Game Over?
+    let strikes = 0;
+    let ended = false;
+    let money = 0;
+    const moneyEl = document.getElementById('money');
 
     const popup     = document.getElementById('popup');
     const popupText = document.getElementById('popupText');
     const popupBtn  = document.getElementById('popupBtn');
     const gameover  = document.getElementById('gameover');
 
-    function showPopup(text){
-      popupText.textContent = text;
-      popup.style.display = 'flex';
-    }
-    function hidePopup(){
-      popup.style.display = 'none';
-    }
+    function showPopup(text){ popupText.textContent = text; popup.style.display = 'flex'; }
+    function hidePopup(){ popup.style.display = 'none'; }
     popupBtn.addEventListener('click', ()=>{
-      // Wenn gerade Kündigung angezeigt wurde -> jetzt Game Over zeigen
       if (strikes >= 3){
         hidePopup();
         gameover.style.display = 'flex';
         ended = true;
-      } else {
-        hidePopup();
-      }
+      } else hidePopup();
     });
 
-    // Tippen/Klicken => füllt und startet neuen Zyklus
+    function updateMoney(){
+      moneyEl.textContent = money.toFixed(2).replace('.', ',') + ' €';
+    }
+
+    function spawnFx(text, className, x, y){
+      const s = document.createElement('div');
+      s.className = 'fx ' + className;
+      s.textContent = text;
+      s.style.left = x + 'px';
+      s.style.top  = y + 'px';
+      document.body.appendChild(s);
+      setTimeout(()=> s.remove(), 950);
+    }
+
+    function moneyFxAtGlass(){
+      const rect = g.el.getBoundingClientRect();
+      spawnFx('+0,20 €', 'moneyFx', rect.left + rect.width/2, rect.top + rect.height*0.2);
+    }
+
+    function emojiFxAtGlass(emoji){
+      const rect = g.el.getBoundingClientRect();
+      spawnFx(emoji, 'emojiFx', rect.left + rect.width/2, rect.top - 10);
+    }
+
     const fillUp = ()=>{
       if (ended) return;
+      const prevPct = g.pct; // merken, wie voll es vorher war
       g.pct = 100;
       g.warnedThisCycle = false;
+      money += 0.20;
+      updateMoney();
+      moneyFxAtGlass();
+
+      // Emoji je nach vorherigem Füllstand
+      if (prevPct <= 33) emojiFxAtGlass('😀');
+      else if (prevPct <= 66) emojiFxAtGlass('😐');
+      else emojiFxAtGlass('😠');
+
       render();
     };
     g.el.addEventListener('click', fillUp);
     g.el.addEventListener('touchend', fillUp, {passive:true});
 
-    // Entleerungs-Loop
     let last = performance.now();
     function loop(now){
       if (ended) return;
       const dt = Math.min(1000, now - last) / 1000; last = now;
 
-      const eff = Math.max(0, g.speed + g.jitter);
-      g.pct = Math.max(0, g.pct - eff * dt);
+      g.pct = Math.max(0, g.pct - Math.max(0, g.speed + g.jitter) * dt);
 
-      // Abmahnungen/Kündigung bei Leerstand (einmal pro Zyklus)
       if (g.pct <= 0 && !g.warnedThisCycle){
         g.warnedThisCycle = true;
         strikes++;
@@ -132,7 +187,6 @@
         else if (strikes === 2) showPopup('Zweite Abmahnung');
         else if (strikes >= 3)  showPopup('Kündigung');
       }
-
       render();
       requestAnimationFrame(loop);
     }
@@ -143,15 +197,13 @@
       g.el.classList.toggle('empty', g.pct <=  0);
     }
 
-    // kleine zufällige Schwankungen (wirkt natürlicher)
     function reshuffleJitter(){
       if (ended) return;
-      g.jitter = (Math.random()*0.4 - 0.2) * g.speed; // ±20 %
+      g.jitter = (Math.random()*0.4 - 0.2) * g.speed;
       setTimeout(reshuffleJitter, 7000 + Math.random()*5000);
     }
     reshuffleJitter();
 
-    // Exakte Position über dem cover-Bild
     const stage = document.getElementById('stage');
     const bg    = document.getElementById('bg');
     function positionGlass(){
@@ -170,7 +222,7 @@
     addEventListener('resize', positionGlass, {passive:true});
     addEventListener('orientationchange', positionGlass, {passive:true});
 
-    // Start
+    updateMoney();
     requestAnimationFrame(loop);
   </script>
 </body>
