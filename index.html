@@ -3,212 +3,188 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-<title>Köbes Panik</title>
+<title>Köbes Panik – Version 0</title>
 <style>
-html,body{height:100%;margin:0;background:#000;overflow:hidden;-webkit-tap-highlight-color:transparent}
-.stage{position:fixed;inset:0}
-#bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
-
-/* HUD */
-.money{
-  position:absolute; top:12px; left:12px; z-index:5;
-  background:rgba(0,0,0,.5); color:#ffd700; padding:6px 12px;
-  border-radius:8px; font:600 16px system-ui; user-select:none;
-}
-.topbar{
-  position:absolute; top:12px; right:12px; z-index:5;
-  display:flex; gap:8px;
-}
-.btn{
-  width:42px; height:42px; display:flex; align-items:center; justify-content:center;
-  background:rgba(0,0,0,.5); border-radius:8px; font-size:22px; cursor:pointer;
-  user-select:none;
-}
-
-/* Energie-Balken */
-.energybar{
-  position:absolute; top:60px; left:12px; width:140px; height:18px; background:#400;
-  border-radius:6px; overflow:hidden; z-index:5;
-}
-.energyfill{
-  width:100%; height:100%; background:linear-gradient(90deg,#0f0,#ff0,#f00);
-  transition:width 0.2s linear;
-}
-
-/* Gläser */
-.glass{
-  position:absolute; width:46px; height:70px;
-  border:2px solid #d4aa00; border-radius:6px;
-  background:rgba(255,255,255,.04); overflow:hidden;
-  box-shadow:0 0 6px rgba(0,0,0,.55);
-  cursor:pointer;
-}
-.fill{
-  position:absolute; left:0; bottom:0; width:100%;
-  background:linear-gradient(180deg,#f7e17c,#e1b12c);
-  height:100%; transition:height 0.2s ease;
-}
-
-/* Effekte */
-.fx{
-  position:absolute; z-index:10; font:700 16px system-ui;
-  text-shadow:0 1px 2px rgba(0,0,0,.5);
-  pointer-events:none; animation: rise 0.9s ease-out forwards;
-}
-.fx.money{color:#ffd700}
-.fx.tip{color:#56e39f}
-.fx.emoji{font-size:22px}
-@keyframes rise{
-  0%{opacity:0;transform:translate(-50%,10px)}
-  10%{opacity:1;transform:translate(-50%,0)}
-  80%{opacity:1;transform:translate(-50%,-30px)}
-  100%{opacity:0;transform:translate(-50%,-50px)}
-}
-
-/* Popup */
-.popup{
-  position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-  background:rgba(0,0,0,.5); z-index:20;
-}
-.popup-content{
-  background:#1b1f2a; color:#fff; padding:20px; border-radius:10px;
-  text-align:center; max-width:80%;
-}
-.popup-content button{
-  margin-top:12px; padding:8px 14px; border:none; border-radius:6px;
-  background:#f6c356; color:#141821; font-weight:bold; cursor:pointer;
-}
-
-/* Game Over */
-.gameover{
-  position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-  background:#000; color:#fff; font:700 20px system-ui; z-index:30;
-}
+  html,body {
+    height:100%; margin:0; background:#000; overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .stage {
+    position:fixed; inset:0;
+    padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);
+  }
+  #bg {
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; object-position:center; user-select:none; pointer-events:none;
+  }
+  .money {
+    position:absolute; top:12px; left:12px; z-index:4;
+    background:rgba(0,0,0,.45); color:#ffd700;
+    border:1px solid rgba(255,215,0,0.4); border-radius:10px;
+    padding:8px 14px; font:600 16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    backdrop-filter: blur(2px);
+  }
+  .fx {
+    position:absolute; z-index:5; font:700 18px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    text-shadow:0 1px 2px rgba(0,0,0,.5); pointer-events:none; opacity:0;
+    transform: translate(-50%,0); animation: rise 900ms ease-out forwards;
+    white-space:nowrap;
+  }
+  .fx.money { color:#ffd700; font-size:16px; }
+  .fx.tip { color:#56e39f; font-size:16px; }
+  .fx.emoji { font-size:26px; }
+  @keyframes rise {
+    0%{opacity:0;transform:translate(-50%,10px)}
+    12%{opacity:1;transform:translate(-50%,0)}
+    70%{opacity:1;transform:translate(-50%,-40px)}
+    100%{opacity:0;transform:translate(-50%,-60px)}
+  }
+  .glass {
+    position:absolute; width:46px; height:70px;
+    border:2px solid #d4aa00; border-radius:6px;
+    background:rgba(255,255,255,.04); overflow:hidden;
+    box-shadow:0 0 6px rgba(0,0,0,.55); cursor:pointer;
+  }
+  .glass.low { border-color:#ffb300; }
+  .glass.empty { border-color:#ef5350; }
+  .fill {
+    position:absolute; left:0; bottom:0; width:100%; height:100%;
+    background:linear-gradient(180deg,#f7e17c,#e1b12c);
+    transition:height .2s ease;
+  }
+  .popup {
+    position:fixed; inset:0; display:none;
+    align-items:center; justify-content:center;
+    background:rgba(0,0,0,.5); z-index:7;
+  }
+  .popup-content {
+    background:#1b1f2a; color:#fff; padding:20px; border-radius:10px;
+    text-align:center; max-width:80%;
+  }
+  .popup-content button {
+    margin-top:12px; padding:8px 14px; border:none; border-radius:6px;
+    background:#f6c356; color:#141821; font-weight:bold; cursor:pointer;
+  }
+  .gameover {
+    position:fixed; inset:0; display:none;
+    align-items:center; justify-content:center;
+    background:#000; color:#fff; font:700 20px system-ui;
+  }
 </style>
 </head>
 <body>
 <div class="stage" id="stage">
-  <img id="bg" src="bg.PNG" alt="">
-
+  <img id="bg" src="bg.png" alt="Hintergrund">
   <div class="money" id="money">0,00 €</div>
-  <div class="topbar">
-    <div class="btn" id="foodBtn">🍽</div>
-    <div class="btn" id="drinkBtn">🍺</div>
-    <div class="btn" id="smokeBtn">🚬</div>
-    <div class="btn" id="assistantBtn">🤝</div>
-    <div class="btn" id="soundBtn">🔊</div>
-  </div>
-
-  <div class="energybar"><div class="energyfill" id="energyFill"></div></div>
+  <div class="glass" id="glass"><div class="fill"></div></div>
 </div>
-
-<!-- Popup -->
-<div class="popup" id="popup">
-  <div class="popup-content">
-    <div id="popupText">Erste Abmahnung</div>
-    <button id="popupBtn">OK</button>
-  </div>
-</div>
-
-<!-- Game Over -->
-<div class="gameover" id="gameover">Game Over<br>Du musst zum Arbeitsamt.</div>
 
 <audio id="bgm" src="Tavern.mp3" loop></audio>
 <audio id="fillSound" src="fill.mp3"></audio>
 
+<div class="popup" id="popup">
+  <div class="popup-content">
+    <div id="popupText">Abmahnung</div>
+    <button id="popupBtn">OK</button>
+  </div>
+</div>
+
+<div class="gameover" id="gameover">Game Over<br>Du musst zum Arbeitsamt.</div>
+
 <script>
-const BASE_EURO=0.25, TIP_RATE=0.1;
-const stage=document.getElementById('stage');
-const moneyEl=document.getElementById('money');
-const energyFill=document.getElementById('energyFill');
-const popup=document.getElementById('popup'), popupText=document.getElementById('popupText'), popupBtn=document.getElementById('popupBtn');
-const gameover=document.getElementById('gameover');
-const bgm=document.getElementById('bgm'), fillSound=document.getElementById('fillSound');
+const glassEl = document.getElementById('glass');
+const fillEl = glassEl.querySelector('.fill');
+const moneyEl = document.getElementById('money');
+const popup = document.getElementById('popup');
+const popupText = document.getElementById('popupText');
+const popupBtn = document.getElementById('popupBtn');
+const gameover = document.getElementById('gameover');
+const bgm = document.getElementById('bgm');
+const fillSound = document.getElementById('fillSound');
 
-let money=0, strikes=0, progressGoodFills=0, ended=false;
-let assistant=false, energy=100;
-let glasses=[];
+let money = 0;
+let strikes = 0;
+let ended = false;
 
-function euro(v){return v.toFixed(2).replace('.',',')+' €';}
-function updateMoney(){moneyEl.textContent=euro(money);}
-function updateEnergy(){
-  energyFill.style.width=energy+'%';
-  if(energy<=0){ endGame("Du bist im Krankenhaus!"); }
+let pct = 100;
+let speed = 5; // Füllverlust pro Sekunde
+
+bgm.volume = 0.5;
+bgm.play().catch(()=>{});
+document.addEventListener('pointerdown', () => { if (bgm.paused) bgm.play().catch(()=>{}); }, {once:true});
+
+function euro(v){ return v.toFixed(2).replace('.', ',') + ' €'; }
+function updateMoney(){ moneyEl.textContent = euro(money); }
+
+function spawnFx(text, cls, x, y){
+  const s = document.createElement('div');
+  s.className = 'fx ' + cls;
+  s.textContent = text;
+  s.style.left = x+'px';
+  s.style.top = y+'px';
+  document.body.appendChild(s);
+  setTimeout(()=>s.remove(), 950);
 }
-function spawnFx(txt,cls,x,y){
-  const el=document.createElement('div');
-  el.className='fx '+cls; el.textContent=txt;
-  el.style.left=x+'px'; el.style.top=y+'px';
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),900);
+
+function showPopup(text){
+  popupText.textContent = text;
+  popup.style.display = 'flex';
 }
-function addGlass(x,y){
-  const el=document.createElement('div'); el.className='glass';
-  const fill=document.createElement('div'); fill.className='fill'; el.appendChild(fill);
-  stage.appendChild(el);
-  el.style.left=x+'px'; el.style.top=y+'px';
-  const g={el,fill,pct:100,speed:Math.random()*2+4,warned:false};
-  el.addEventListener('click',()=>handleFill(g));
-  glasses.push(g);
-}
-function randomPos(){
-  let x,y;
-  do{
-    x=Math.random()*(window.innerWidth-50);
-    y=Math.random()*(window.innerHeight-120)+80;
-  }while(glasses.some(g=>Math.hypot(parseInt(g.el.style.left)-x, parseInt(g.el.style.top)-y)<70));
-  return {x,y};
-}
-function handleFill(g){
-  if(ended)return;
-  fillSound.currentTime=0; fillSound.play();
-  const prev=g.pct;
-  g.pct=100; g.warned=false;
-  let addBase=BASE_EURO, tipAdd=0, emoji='';
-  if(prev<=33){emoji='😀';tipAdd=BASE_EURO*TIP_RATE;progressGoodFills++;}
-  else if(prev<=66){emoji='😐';}
-  else {emoji='😠'; if(progressGoodFills>0)progressGoodFills--;}
-  const share=assistant?0.5:1;
-  money+=(addBase+tipAdd)*share;
+popupBtn.onclick = () => {
+  popup.style.display = 'none';
+  if (strikes >= 3) {
+    gameover.style.display = 'flex';
+    ended = true;
+  }
+};
+
+function handleFill(){
+  if (ended) return;
+  fillSound.currentTime = 0;
+  fillSound.play().catch(()=>{});
+  
+  const prev = pct;
+  pct = 100;
+
+  let tip = 0, emoji = '';
+  if (prev <= 33) { tip = 0.25*0.1; emoji = '😀'; }
+  else if (prev <= 66) { emoji = '😐'; }
+  else { emoji = '😠'; }
+
+  money += 0.25 + tip;
   updateMoney();
-  const r=g.el.getBoundingClientRect();
-  spawnFx('+'+euro(addBase*share),'money',r.left+20,r.top);
-  if(tipAdd>0)spawnFx('TIP +'+euro(tipAdd*share),'tip',r.left+60,r.top);
-  spawnFx(emoji,'emoji',r.left+40,r.top-20);
-  if(progressGoodFills>=3 && glasses.length<3) {let p=randomPos();addGlass(p.x,p.y);}
-  else if(progressGoodFills>0 && progressGoodFills%3===0){let p=randomPos();addGlass(p.x,p.y);}
+
+  const r = glassEl.getBoundingClientRect();
+  spawnFx('+'+euro(0.25), 'money', r.left+r.width/2 - 40, r.top);
+  if (tip>0) spawnFx('TIP +'+euro(tip), 'tip', r.left+r.width/2 + 40, r.top);
+  spawnFx(emoji, 'emoji', r.left+r.width/2, r.top - 20);
 }
-function loop(){
-  if(ended)return;
-  glasses.forEach(g=>{
-    g.pct-=g.speed*0.016;
-    if(g.pct<0)g.pct=0;
-    g.fill.style.height=g.pct+'%';
-    if(g.pct<=0 && !g.warned){
-      g.warned=true; strikes++;
-      if(strikes===1)showPopup("Erste Abmahnung");
-      else if(strikes===2)showPopup("Zweite Abmahnung");
-      else if(strikes>=3)endGame("Kündigung");
-    }
-    if(assistant && g.pct<=30)handleFill(g);
-  });
-  energy-=0.005;
-  updateEnergy();
+
+glassEl.addEventListener('click', handleFill);
+
+function render(){
+  fillEl.style.height = pct + '%';
+  glassEl.classList.toggle('low', pct<=35 && pct>0);
+  glassEl.classList.toggle('empty', pct<=0);
+}
+
+let last = performance.now();
+function loop(now){
+  if (ended) return;
+  const dt = (now - last)/1000;
+  last = now;
+  pct = Math.max(0, pct - speed*dt);
+  if (pct<=0 && !glassEl.classList.contains('empty')){
+    strikes++;
+    if (strikes === 1) showPopup('Erste Abmahnung');
+    else if (strikes === 2) showPopup('Zweite Abmahnung');
+    else if (strikes >= 3) showPopup('Kündigung');
+  }
+  render();
   requestAnimationFrame(loop);
 }
-function showPopup(txt){popupText.textContent=txt;popup.style.display='flex';}
-popupBtn.onclick=()=>popup.style.display='none';
-function endGame(txt){ended=true;gameover.innerHTML=txt;gameover.style.display='flex';}
 
-document.getElementById('assistantBtn').onclick=()=>assistant=!assistant;
-document.getElementById('foodBtn').onclick=()=>{if(money>=1){money-=1;updateMoney();energy=Math.min(100,energy+15);updateEnergy();}};
-document.getElementById('drinkBtn').onclick=()=>{if(money>=1){money-=1;updateMoney();energy=Math.min(100,energy+10);updateEnergy();}};
-document.getElementById('smokeBtn').onclick=()=>{if(money>=1){money-=1;updateMoney();energy=Math.min(100,energy+5);updateEnergy();}};
-document.getElementById('soundBtn').onclick=()=>{bgm.muted=!bgm.muted;};
-
-bgm.play().catch(()=>{});
-updateMoney();updateEnergy();
-let p=randomPos();addGlass(p.x,p.y);
+updateMoney();
 requestAnimationFrame(loop);
 </script>
 </body>
