@@ -1,87 +1,91 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Köbes Panik</title>
 <style>
-html,body{height:100%;margin:0;background:#000;overflow:hidden;-webkit-tap-highlight-color:transparent}
-.stage{position:fixed;inset:0}
-#bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+html,body{
+  margin:0;
+  padding:0;
+  height:100%;
+  background:#000;
+  overflow:hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.stage{position:relative;width:100%;height:100%;}
+#bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 
 .money{
-  position:absolute; top:6px; left:8px; z-index:10;
-  background:rgba(0,0,0,0.4); color:#ffd700; padding:4px 8px;
-  border-radius:6px; font:600 15px system-ui,sans-serif;
+  position:absolute;top:10px;left:10px;
+  background:rgba(0,0,0,.5);color:#ffd700;
+  padding:6px 10px;border-radius:6px;
+  font:600 16px system-ui;z-index:5;
 }
-.energy-bar{
-  position:absolute; top:32px; left:8px; width:120px; height:14px;
-  border:1px solid #000; background:red; z-index:10;
+.energy{
+  position:absolute;top:40px;left:10px;width:120px;height:14px;
+  background:#300;border-radius:6px;overflow:hidden;z-index:5;
 }
 .energy-fill{
-  height:100%; width:100%; background:green;
+  height:100%;width:100%;background:linear-gradient(90deg,green,yellow,red);
 }
-
-.top-buttons{
-  position:absolute; top:8px; right:8px; display:flex; gap:6px; z-index:10;
+.controls{
+  position:absolute;top:10px;right:10px;display:flex;flex-direction:row;gap:6px;z-index:5;
 }
-.btn{
-  width:40px; height:40px; background:rgba(0,0,0,0.4); border-radius:6px;
-  display:flex; align-items:center; justify-content:center; font-size:22px;
-  cursor:pointer; user-select:none;
+.controls .btn{
+  width:40px;height:40px;background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;
+  border-radius:6px;cursor:pointer;
+  font-size:20px;
 }
-.btn:active{transform:scale(0.9)}
-
 .glass{
-  position:absolute; width:46px; height:70px; border:2px solid #d4aa00; border-radius:6px;
-  background:rgba(255,255,255,0.05); overflow:hidden; cursor:pointer;
+  position:absolute;width:46px;height:70px;
+  border:2px solid #d4aa00;border-radius:6px;
+  background:rgba(255,255,255,.05);
+  overflow:hidden;box-shadow:0 0 6px rgba(0,0,0,.55);
+  cursor:pointer;
 }
-.fill{
-  position:absolute; bottom:0; left:0; width:100%;
-  background:linear-gradient(180deg,#f7e17c,#e1b12c);
+.fill{position:absolute;left:0;bottom:0;width:100%;height:100%;
+  background:linear-gradient(180deg,#f7e17c,#e1b12c);transition:height .2s;
 }
-
 .fx{
-  position:absolute; pointer-events:none; font:700 16px system-ui;
-  text-shadow:0 1px 2px rgba(0,0,0,0.5);
-  animation: rise 1s ease-out forwards;
+  position:absolute;font:700 16px system-ui;pointer-events:none;
+  animation:rise 1s ease-out forwards;white-space:nowrap;
 }
+.fx.money{color:#ffd700;}
+.fx.tip{color:#56e39f;}
+.fx.emoji{font-size:24px;}
 @keyframes rise{
-  0%{opacity:0; transform:translateY(0)}
-  20%{opacity:1}
-  100%{opacity:0; transform:translateY(-40px)}
+  0%{opacity:0;transform:translate(-50%,10px)}
+  20%{opacity:1;transform:translate(-50%,0)}
+  100%{opacity:0;transform:translate(-50%,-50px)}
 }
-.fx.money{color:#ffd700}
-.fx.tip{color:#56e39f}
-.fx.emoji{font-size:24px}
-.fx.malus{color:#ef5350}
-
 .popup{
-  position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:20;
+  position:fixed;inset:0;display:none;
+  background:rgba(0,0,0,.6);align-items:center;justify-content:center;z-index:10;
 }
 .popup-content{
-  background:#222; color:#fff; padding:20px; border-radius:8px; text-align:center;
+  background:#222;color:#fff;padding:20px;border-radius:8px;text-align:center;
 }
 .popup-content button{
-  margin-top:12px; padding:6px 10px; font-weight:bold;
+  margin-top:10px;padding:6px 12px;background:#ffd700;border:none;border-radius:6px;font-weight:bold;cursor:pointer;
 }
-
 .gameover{
-  position:fixed; inset:0; background:#000; color:#fff; display:none;
-  align-items:center; justify-content:center; font-size:20px; z-index:30; text-align:center;
+  position:fixed;inset:0;display:none;
+  background:#000;color:#fff;font:700 20px system-ui;align-items:center;justify-content:center;z-index:11;
 }
 </style>
 </head>
 <body>
 <div class="stage" id="stage">
-  <img id="bg" src="bg.PNG" alt=""/>
+  <img id="bg" src="bg.PNG" alt="">
   <div class="money" id="money">0,00 €</div>
-  <div class="energy-bar"><div class="energy-fill" id="energyFill"></div></div>
-  <div class="top-buttons">
-    <div class="btn" id="eatBtn">🍗</div>
+  <div class="energy"><div class="energy-fill" id="energyFill"></div></div>
+  <div class="controls">
+    <div class="btn" id="eatBtn">🍖</div>
     <div class="btn" id="smokeBtn">🚬</div>
     <div class="btn" id="drinkBtn">🍺</div>
-    <div class="btn" id="assistantBtn">🤝</div>
+    <div class="btn" id="assistBtn">🤝</div>
     <div class="btn" id="soundBtn">🔊</div>
   </div>
 </div>
@@ -91,155 +95,178 @@ html,body{height:100%;margin:0;background:#000;overflow:hidden;-webkit-tap-highl
 
 <div class="popup" id="popup">
   <div class="popup-content">
-    <div id="popupText"></div>
-    <button id="popupOk">OK</button>
+    <div id="popupText">Abmahnung</div>
+    <button id="popupBtn">OK</button>
   </div>
 </div>
 
-<div class="gameover" id="gameover">
-  Game Over<br/>Du wurdest gekündigt.<br/>Du musst zum Arbeitsamt.
-</div>
+<div class="gameover" id="gameover">Game Over<br>Du wurdest gekündigt.<br>Du musst zum Arbeitsamt.</div>
 
 <script>
-const moneyEl = document.getElementById('money');
-const energyFill = document.getElementById('energyFill');
-const stage = document.getElementById('stage');
-const popup = document.getElementById('popup');
-const popupText = document.getElementById('popupText');
-const popupOk = document.getElementById('popupOk');
-const gameover = document.getElementById('gameover');
-const bgm = document.getElementById('bgm');
-const fillSound = document.getElementById('fillSound');
+const stage=document.getElementById("stage");
+const moneyEl=document.getElementById("money");
+const energyFill=document.getElementById("energyFill");
+const bgm=document.getElementById("bgm");
+const fillSound=document.getElementById("fillSound");
+const popup=document.getElementById("popup");
+const popupText=document.getElementById("popupText");
+const popupBtn=document.getElementById("popupBtn");
+const gameover=document.getElementById("gameover");
 
-let money = 0;
-let energy = 100;
-let strikes = 0;
-let ended = false;
-let assistantOn = false;
-let goodFills = 0;
-let glasses = [];
+let money=0;
+let energy=100;
+let strikes=0;
+let ended=false;
+let goodFills=0;
+let assistant=false;
+let glasses=[];
 
-const BASE_EURO = 0.25;
-const TIP_MID = 0.05;
-const TIP_LOW = 0.10;
-const RAND_AREA = {xMin:25, xMax:75, yMin:55, yMax:82}; // % Bereich im roten Feld
+// Roter Bereich geschätzt
+const AREA={xMin:25,xMax:75,yMin:55,yMax:85};
+const GLASS_SIZE=46;
+const MIN_DIST=50;
 
-function updateMoney(){ moneyEl.textContent = money.toFixed(2).replace('.', ',') + ' €'; }
+function euro(v){return v.toFixed(2).replace(".",",")+" €";}
+function updateMoney(){moneyEl.textContent=euro(money);}
 function updateEnergy(){
-  energyFill.style.width = energy + '%';
-  energyFill.style.background = `hsl(${energy*1.2}, 80%, 40%)`; // Grün→Rot
+  energyFill.style.width=energy+"%";
+  if(energy>66)energyFill.style.background="green";
+  else if(energy>33)energyFill.style.background="orange";
+  else energyFill.style.background="red";
+}
+
+function spawnFx(txt,cls,x,y){
+  const el=document.createElement("div");
+  el.className="fx "+cls;
+  el.textContent=txt;
+  el.style.left=x+"px";
+  el.style.top=y+"px";
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+function randomPos(){
+  let tries=0;
+  while(tries<50){
+    const x=AREA.xMin+(Math.random()*(AREA.xMax-AREA.xMin));
+    const y=AREA.yMin+(Math.random()*(AREA.yMax-AREA.yMin));
+    const sw=stage.clientWidth;
+    const sh=stage.clientHeight;
+    const px=sw*(x/100);
+    const py=sh*(y/100);
+    let overlap=false;
+    for(const g of glasses){
+      const rect=g.el.getBoundingClientRect();
+      const gx=rect.left+rect.width/2;
+      const gy=rect.top+rect.height/2;
+      const dist=Math.hypot(px-gx,py-gy);
+      if(dist<MIN_DIST){overlap=true;break;}
+    }
+    if(!overlap)return {px,py};
+    tries++;
+  }
+  return {px:100,py:100};
 }
 
 function addGlass(){
-  const g = document.createElement('div');
-  g.className = 'glass';
-  g.style.left = rand(RAND_AREA.xMin, RAND_AREA.xMax) + '%';
-  g.style.top = rand(RAND_AREA.yMin, RAND_AREA.yMax) + '%';
-  const f = document.createElement('div');
-  f.className = 'fill';
-  f.style.height = '100%';
-  g.appendChild(f);
-  stage.appendChild(g);
-  const glassObj = {el:g, fill:f, pct:100, speed:rand(5,8), warned:false};
-  g.addEventListener('click', ()=>fillGlass(glassObj));
-  glasses.push(glassObj);
-}
-function rand(min,max){ return min + Math.random()*(max-min); }
-
-function spawnFx(text, cls, x, y){
-  const d = document.createElement('div');
-  d.className = 'fx ' + cls;
-  d.textContent = text;
-  d.style.left = x + 'px';
-  d.style.top = y + 'px';
-  document.body.appendChild(d);
-  setTimeout(()=>d.remove(), 1000);
+  const {px,py}=randomPos();
+  const el=document.createElement("div");
+  el.className="glass";
+  const fill=document.createElement("div");
+  fill.className="fill";
+  el.appendChild(fill);
+  stage.appendChild(el);
+  el.style.left=(px-GLASS_SIZE/2)+"px";
+  el.style.top=(py-70/2)+"px";
+  const g={el,fillEl:fill,pct:100,speed:Math.random()*2+3};
+  el.addEventListener("click",()=>handleFill(g));
+  glasses.push(g);
 }
 
-function fillGlass(g){
-  if(ended) return;
-  fillSound.currentTime=0; fillSound.play();
-  let prev = g.pct;
-  g.pct = 100; g.warned = false;
-  let emoji = '', tip = 0, malus=null;
-
-  if(prev > 66){
-    emoji = '😠';
-    if(goodFills>0){goodFills--; malus='-1 Fortschritt';}
-  } else if(prev > 33){
-    emoji = '😐'; tip = BASE_EURO * TIP_MID;
-  } else {
-    emoji = '😀'; tip = BASE_EURO * TIP_LOW; goodFills++;
-  }
-  let earn = BASE_EURO + tip;
-  if(assistantOn) earn *= 0.5;
-  money += earn; updateMoney();
-
-  const r = g.el.getBoundingClientRect();
-  spawnFx('+'+earn.toFixed(2).replace('.',','), 'money', r.left, r.top-20);
-  if(tip>0) spawnFx('TIP', 'tip', r.left+30, r.top-20);
-  spawnFx(emoji, 'emoji', r.left+15, r.top-40);
-  if(malus) spawnFx(malus, 'malus', r.left+15, r.top);
-
-  if(goodFills % 3 === 0) addGlass();
+function handleFill(g){
+  if(ended)return;
+  fillSound.currentTime=0;fillSound.play();
+  const prev=g.pct;
+  g.pct=100;
+  let add=0.25;
+  let tip=0;
+  let emoji="";
+  if(prev<=33){emoji="😀";tip=0.25*0.1;goodFills++;}
+  else if(prev<=66){emoji="😐";tip=0.25*0.05;}
+  else{emoji="😠";}
+  if(assistant){add/=2;tip/=2;}
+  money+=add+tip;
+  updateMoney();
+  const rect=g.el.getBoundingClientRect();
+  const cx=rect.left+rect.width/2;
+  const cy=rect.top;
+  spawnFx("+"+euro(add),"money",cx-40,cy);
+  if(tip>0)spawnFx("TIP +"+euro(tip),"tip",cx+40,cy);
+  spawnFx(emoji,"emoji",cx,cy-20);
+  checkUnlock();
 }
 
-function loop(){
-  if(ended) return;
-  glasses.forEach(g=>{
-    g.pct -= g.speed*0.02;
-    if(g.pct < 0) g.pct = 0;
-    g.fill.style.height = g.pct + '%';
-    if(g.pct <= 0 && !g.warned){
-      g.warned = true;
+function checkUnlock(){
+  if(goodFills>0 && goodFills%3===0)addGlass();
+}
+
+function gameOver(){
+  ended=true;
+  gameover.style.display="flex";
+}
+
+function tick(dt){
+  if(ended)return;
+  for(const g of glasses){
+    g.pct-=g.speed*dt;
+    if(g.pct<=0){
+      g.pct=0;
       strikes++;
-      if(strikes>=3){ showPopup('Kündigung'); }
-      else showPopup(strikes===1?'Erste Abmahnung':'Zweite Abmahnung');
+      if(strikes>=3)gameOver();
+      else{
+        popupText.textContent=strikes===1?"Erste Abmahnung":"Zweite Abmahnung";
+        popup.style.display="flex";
+      }
     }
-  });
-  energy -= 0.01;
-  if(energy<=0){ showPopup('Kollaps – Krankenhaus!'); }
+    g.fillEl.style.height=g.pct+"%";
+  }
+  energy-=0.005*dt*60;
+  if(energy<=0)gameOver();
   updateEnergy();
+}
+
+let last=performance.now();
+function loop(now){
+  const dt=(now-last)/1000;last=now;
+  tick(dt);
   requestAnimationFrame(loop);
 }
+requestAnimationFrame(loop);
 
-function showPopup(msg){
-  popupText.textContent = msg;
-  popup.style.display='flex';
-}
+// Buttons
+document.getElementById("eatBtn").onclick=()=>{
+  if(money>=1){money-=1;updateMoney();energy=Math.min(100,energy+20);}
+};
+document.getElementById("smokeBtn").onclick=()=>{
+  if(money>=0.5){money-=0.5;updateMoney();energy=Math.min(100,energy+10);}
+};
+document.getElementById("drinkBtn").onclick=()=>{
+  if(money>=0.7){money-=0.7;updateMoney();energy=Math.min(100,energy+15);}
+};
+document.getElementById("assistBtn").onclick=()=>{
+  assistant=!assistant;
+  document.getElementById("assistBtn").style.background=assistant?"rgba(0,128,0,0.5)":"rgba(0,0,0,0.5)";
+};
+document.getElementById("soundBtn").onclick=()=>{
+  if(bgm.paused)bgm.play();else bgm.pause();
+};
+popupBtn.onclick=()=>popup.style.display="none";
 
-popupOk.onclick = ()=>{
-  popup.style.display='none';
-  if(strikes>=3 || energy<=0){
-    ended=true; gameover.style.display='flex';
-  }
-};
-
-document.getElementById('eatBtn').onclick = ()=>{
-  if(money>=1){money-=1; energy=Math.min(100,energy+20); updateMoney(); updateEnergy();}
-};
-document.getElementById('smokeBtn').onclick = ()=>{
-  if(money>=0.5){money-=0.5; energy=Math.min(100,energy+5); updateMoney(); updateEnergy();}
-};
-document.getElementById('drinkBtn').onclick = ()=>{
-  if(money>=0.7){money-=0.7; energy=Math.min(100,energy+10); updateMoney(); updateEnergy();}
-};
-document.getElementById('assistantBtn').onclick = ()=>{
-  assistantOn = !assistantOn;
-  document.getElementById('assistantBtn').style.background = assistantOn?'rgba(0,128,0,0.4)':'rgba(0,0,0,0.4)';
-};
-document.getElementById('soundBtn').onclick = ()=>{
-  bgm.muted=!bgm.muted;
-  document.getElementById('soundBtn').textContent = bgm.muted?'🔇':'🔊';
-};
-
-bgm.play().catch(()=>{document.addEventListener('click',()=>bgm.play(),{once:true});});
-
-// Start
+// Init
 updateMoney();
 updateEnergy();
 addGlass();
-loop();
+bgm.play().catch(()=>{});
 </script>
 </body>
 </html>
