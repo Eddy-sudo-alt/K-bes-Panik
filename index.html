@@ -12,41 +12,34 @@
   /* Geldanzeige */
   .money{
     position:absolute; top:12px; left:12px; z-index:4;
-    background:rgba(0,0,0,.45);
-    color:#ffd700;
-    border:1px solid rgba(255,215,0,0.4);
-    border-radius:10px;
-    padding:8px 14px;
-    font:600 16px/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    backdrop-filter: blur(2px);
-    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+    background:rgba(0,0,0,.45); color:#ffd700;
+    border:1px solid rgba(255,215,0,0.4); border-radius:10px;
+    padding:8px 14px; font:600 16px/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    backdrop-filter: blur(2px); box-shadow:0 2px 6px rgba(0,0,0,0.4);
   }
 
-  /* Sound Toggle (Icon) */
-  .sound-toggle{
-    position:absolute; top:12px; right:12px; z-index:4;
+  /* Top-Buttons rechts */
+  .topbtn{position:absolute; top:12px; z-index:4;
     width:42px; height:42px; display:flex; align-items:center; justify-content:center;
-    background:rgba(0,0,0,.45); color:#ffd700;
-    border:1px solid rgba(255,215,0,.4); border-radius:10px;
-    font:22px/1 "Apple Color Emoji","Segoe UI Emoji",system-ui,sans-serif; cursor:pointer;
-    user-select:none; box-shadow:0 2px 6px rgba(0,0,0,.4);
+    background:rgba(0,0,0,.45); color:#ffd700; border:1px solid rgba(255,215,0,.4);
+    border-radius:10px; font:22px/1 "Apple Color Emoji","Segoe UI Emoji",system-ui,sans-serif;
+    cursor:pointer; user-select:none; box-shadow:0 2px 6px rgba(0,0,0,.4);
   }
+  #soundToggle{ right:12px; }
+  #assistantToggle{ right:60px; } /* links vom Sound-Icon */
+  #assistantToggle.active{ background:rgba(0,128,0,.4); border-color:rgba(120,255,120,.5); }
 
   /* Effekte (Geld, TIP, Emoji, Malus) */
   .fx{
-    position:absolute; z-index:5;
-    font:700 18px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    text-shadow:0 1px 2px rgba(0,0,0,.5);
-    pointer-events:none; opacity:0;
-    transform: translate(-50%,0) translateZ(0);
-    animation: rise 900ms ease-out forwards;
-    white-space:nowrap; /* NIE umbrechen */
+    position:absolute; z-index:5; font:700 18px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    text-shadow:0 1px 2px rgba(0,0,0,.5); pointer-events:none; opacity:0;
+    transform: translate(-50%,0) translateZ(0); animation: rise 900ms ease-out forwards;
+    white-space:nowrap;
   }
   .fx.money{ color:#ffd700; font-size:16px; }
   .fx.tip  { color:#56e39f; font-size:16px; }
   .fx.emoji{ font-size:26px; }
   .fx.malus{ color:#ef5350; font-size:16px; }
-
   @keyframes rise{
     0%{opacity:0;transform:translate(-50%,10px)}
     12%{opacity:1;transform:translate(-50%,0)}
@@ -60,8 +53,7 @@
     z-index:6; background:rgba(0,0,0,.55); color:#ffd700;
     border:1px solid rgba(255,215,0,.45); border-radius:12px;
     padding:10px 18px; font:700 16px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    box-shadow:0 2px 10px rgba(0,0,0,.5); display:none;
-    animation: pop 900ms ease-out;
+    box-shadow:0 2px 10px rgba(0,0,0,.5); display:none; animation: pop 900ms ease-out;
   }
   @keyframes pop{
     0%{transform:translateX(-50%) scale(.8);opacity:0}
@@ -104,10 +96,11 @@
          src="https://raw.githubusercontent.com/Eddy-sudo-alt/K-bes-Panik/refs/heads/main/D865D92A-F21B-4602-A575-BC42B2B79A98.png"/>
 
     <div class="money" id="money">0,00 €</div>
-    <div class="sound-toggle" id="soundToggle" title="Sound an/aus">🔊</div>
+    <div class="topbtn" id="assistantToggle" title="Assistent an/aus">🤝</div>
+    <div class="topbtn" id="soundToggle" title="Sound an/aus">🔊</div>
     <div class="levelup" id="levelup">Level Up – Neues Glas!</div>
 
-    <!-- Gläser -->
+    <!-- Start-Gläser -->
     <div class="glass" id="g0"><div class="fill"></div></div>
     <div class="glass hidden" id="g1"><div class="fill"></div></div>
     <div class="glass hidden" id="g2"><div class="fill"></div></div>
@@ -131,15 +124,19 @@
 
 <script>
 /* ========== Einstellungen ========== */
-const POS = [
+const START_POS = [
   { x:53, y:69 }, // Glas 1
   { x:71, y:62 }, // Glas 2
-  { x:65, y:56 }  // Glas 3 (deine Markierung war ok)
+  { x:65, y:56 }  // Glas 3
 ];
+// Zufallsbereich für neue Gläser (in % der Bildfläche, sicher im Tischbereich)
+const RAND_BOX = { xMin: 22, xMax: 88, yMin: 55, yMax: 82 };
+
 const BASE_EURO = 0.25;
 const TIP_RATE = 0.10; // +10%
 const UNLOCK_2 = 3;    // 3 gute Fills gesamt → Glas 2
 const UNLOCK_3 = 6;    // 6 gute Fills gesamt → Glas 3
+const UNLOCK_STEP = 3; // ab dann: alle +3 guten Fills → neues Glas
 /* ================================== */
 
 const stage = document.getElementById('stage');
@@ -154,18 +151,21 @@ const gameover = document.getElementById('gameover');
 /* Sounds */
 const sFill = new Audio('fill.mp3'); sFill.volume = 0.6;
 const bgm = document.getElementById('bgm'); bgm.volume = 0.5;
-// Autoplay versuchen; bei iPhone starten wir beim ersten Tap
 bgm.play().catch(()=>{});
 document.addEventListener('pointerdown', () => { if (bgm.paused) bgm.play().catch(()=>{}); }, { once: true, passive: true });
 
-/* Mute-Icon */
+/* Sound Toggle */
 const soundToggle = document.getElementById('soundToggle');
-function updateSoundIcon(){
-  soundToggle.textContent = (bgm.muted || bgm.volume === 0) ? '🔇' : '🔊';
-}
-soundToggle.addEventListener('click', ()=>{
-  bgm.muted = !bgm.muted;
-  updateSoundIcon();
+function updateSoundIcon(){ soundToggle.textContent = (bgm.muted || bgm.volume === 0) ? '🔇' : '🔊'; }
+soundToggle.addEventListener('click', ()=>{ bgm.muted = !bgm.muted; updateSoundIcon(); });
+
+/* Assistent (Einnahmen halbiert) */
+let assistantOn = false;
+const assistantToggle = document.getElementById('assistantToggle');
+function updateAssistantIcon(){ assistantToggle.classList.toggle('active', assistantOn); }
+assistantToggle.addEventListener('click', ()=>{
+  assistantOn = !assistantOn;
+  updateAssistantIcon();
 });
 
 /* Geld */
@@ -180,19 +180,7 @@ let ended = false;
 /* Fortschritt kumulativ (gute Fills = unteres Drittel) */
 let progressGoodFills = 0;
 
-function showBanner(txt='Level Up – Neues Glas!'){
-  levelEl.textContent = txt;
-  levelEl.style.display = 'block';
-  setTimeout(()=> levelEl.style.display = 'none', 1200);
-}
-function showPopup(text){ popupText.textContent = text; popup.style.display = 'flex'; }
-function hidePopup(){ popup.style.display = 'none'; }
-popupBtn.addEventListener('click', ()=>{
-  if (strikes >= 3){ hidePopup(); gameover.style.display='flex'; ended=true; }
-  else hidePopup();
-});
-
-/* Effekte – spawnen und ggf. an Bildschirmrand umschalten */
+/* Effekte */
 function spawnFx(text, className, x, y){
   const s = document.createElement('div');
   s.className = 'fx ' + className;
@@ -200,80 +188,94 @@ function spawnFx(text, className, x, y){
   s.style.left = x + 'px';
   s.style.top  = y + 'px';
   document.body.appendChild(s);
-
-  // Nach dem Einfügen prüfen, ob es rechts/links raussteht – dann spiegeln
   requestAnimationFrame(()=>{
-    const r = s.getBoundingClientRect();
-    const M = 10; // minimaler Rand
-    if (r.right > innerWidth - M){
-      // zu weit rechts → nach links ziehen
-      s.style.left = (x - (r.right - (innerWidth - M))) + 'px';
-    } else if (r.left < M){
-      // zu weit links → nach rechts ziehen
-      s.style.left = (x + (M - r.left)) + 'px';
-    }
+    const r = s.getBoundingClientRect(), M = 10;
+    if (r.right > innerWidth - M) s.style.left = (parseFloat(s.style.left)- (r.right-(innerWidth-M))) + 'px';
+    if (r.left < M) s.style.left = (parseFloat(s.style.left)+ (M-r.left)) + 'px';
   });
-
   setTimeout(()=>s.remove(), 950);
 }
-
-/* Dreieck-Layout mit größerem Abstand und No-Wrap */
 function triFx(glassEl, {moneyTxt, tipTxt, emojiTxt, malusTxt}){
   const r = glassEl.getBoundingClientRect();
   const cx = r.left + r.width/2;
   const cy = r.top  + r.height*0.15;
-
-  const dx = 62;   // seitlicher Abstand (größer gemacht)
-  const dyTop = 34; // Emoji höher
-  const dyRow = 14; // kleine Vertikalverschiebung
-
-  if (moneyTxt) spawnFx(moneyTxt, 'money', cx - dx, cy - dyRow);      // links-oben
-  if (tipTxt)   spawnFx(tipTxt,   'tip',   cx + dx, cy - dyRow);      // rechts-oben
-  if (emojiTxt) spawnFx(emojiTxt, 'emoji', cx,      cy - dyTop);      // mittig oben
-  if (malusTxt) spawnFx(malusTxt, 'malus', cx,      cy);              // darunter, mittig
+  const dx = 62, dyTop = 34, dyRow = 14;
+  if (moneyTxt) spawnFx(moneyTxt, 'money', cx - dx, cy - dyRow);
+  if (tipTxt)   spawnFx(tipTxt,   'tip',   cx + dx, cy - dyRow);
+  if (emojiTxt) spawnFx(emojiTxt, 'emoji', cx,      cy - dyTop);
+  if (malusTxt) spawnFx(malusTxt, 'malus', cx,      cy);
 }
 
-/* Glas-Objekte mit unterschiedlichen Geschwindigkeiten */
+/* Tools */
 function rand(min,max){ return min + Math.random()*(max-min); }
-function createGlass(el, idx){
-  // Bereiche: G1: 4–6; G2: 4.8–7.2 (≈+20%); G3: 6–8 (noch schneller)
-  const ranges = [
-    [4.0, 6.0],
-    [4.8, 7.2],
-    [6.0, 8.0]
-  ];
-  const [mn, mx] = ranges[idx] || [4,6];
-  return {
-    idx, el, fillEl: el.querySelector('.fill'),
-    pct: 100,
-    speed: rand(mn, mx),
-    jitter: 0,
-    warnedThisCycle: false,
-    active: !el.classList.contains('hidden')
+function randi(min,max){ return Math.floor(rand(min,max+1)); }
+
+/* Glas-Objekte */
+const glasses = [];   // dynamisch wachsend
+const posPerc = [];   // Prozent-Positionen, passend zur Cover-Logik
+
+/* Glas erstellen (DOM + Logik) */
+function addGlass(posPercent){
+  // DOM erzeugen
+  const el = document.createElement('div');
+  el.className = 'glass';
+  const fill = document.createElement('div');
+  fill.className = 'fill';
+  el.appendChild(fill);
+  stage.appendChild(el);
+
+  // Geschwindigkeit: mit steigender Anzahl leicht schneller
+  const idx = glasses.length;
+  const baseMin = 4 + Math.min(idx,6)*0.4; // wächst ein wenig
+  const baseMax = 6 + Math.min(idx,6)*0.6;
+  const g = {
+    idx, el, fillEl: fill, pct: 100,
+    speed: rand(baseMin, baseMax), jitter: 0,
+    warnedThisCycle: false, active: true
   };
+  el.addEventListener('pointerdown', ()=>handleFill(g));
+  glasses.push(g);
+  posPerc.push(posPercent);
+  positionOne(g);
+  render(g);
+  el.classList.add('popin'); setTimeout(()=>el.classList.remove('popin'), 500);
+  return g;
 }
-const glasses = [
-  createGlass(document.getElementById('g0'), 0),
-  createGlass(document.getElementById('g1'), 1),
-  createGlass(document.getElementById('g2'), 2)
-];
+
+/* Start-Gläser vorbereiten (3 fixe) */
+function initStartGlasses(){
+  // vorhandene 3 HTML-Gläser in Array übernehmen
+  ['g0','g1','g2'].forEach((id,i)=>{
+    const el = document.getElementById(id);
+    const g = {
+      idx: i, el, fillEl: el.querySelector('.fill'), pct: 100,
+      speed: rand(4 + i*0.8, 6 + i*1.0), jitter: 0,
+      warnedThisCycle: false, active: !el.classList.contains('hidden')
+    };
+    el.addEventListener('pointerdown', ()=>handleFill(g));
+    glasses.push(g);
+    posPerc.push(START_POS[i]);
+  });
+}
+initStartGlasses();
 
 /* Positionierung exakt über cover-Bild */
-function positionGlasses(){
+function positionOne(g){
+  const i = g.idx;
   const sw = stage.clientWidth, sh = stage.clientHeight;
   const iw = bg.naturalWidth || 1024, ih = bg.naturalHeight || 1024;
   const scale = Math.max(sw/iw, sh/ih);
   const dw = iw*scale, dh = ih*scale;
   const offX = (sw-dw)/2, offY = (sh-dh)/2;
-
-  glasses.forEach((g,i)=>{
-    const p = POS[i];
-    const w = g.el.offsetWidth, h = g.el.offsetHeight;
-    const x = offX + (p.x/100)*dw;
-    const y = offY + (p.y/100)*dh;
-    g.el.style.left = (x - w/2) + 'px';
-    g.el.style.top  = (y - h*0.65) + 'px';
-  });
+  const p = posPerc[i];
+  const w = g.el.offsetWidth, h = g.el.offsetHeight;
+  const x = offX + (p.x/100)*dw;
+  const y = offY + (p.y/100)*dh;
+  g.el.style.left = (x - w/2) + 'px';
+  g.el.style.top  = (y - h*0.65) + 'px';
+}
+function positionGlasses(){
+  glasses.forEach(positionOne);
 }
 if (bg.complete) positionGlasses(); else bg.addEventListener('load', positionGlasses);
 addEventListener('resize', positionGlasses, {passive:true});
@@ -286,25 +288,49 @@ function render(g){
   g.el.classList.toggle('empty', g.pct <=  0);
 }
 
-/* Freischalten per kumulativem Fortschritt */
-function checkUnlocks(){
+/* Level-Up Banner */
+function showBanner(txt='Level Up – Neues Glas!'){
+  levelEl.textContent = txt;
+  levelEl.style.display = 'block';
+  setTimeout(()=> levelEl.style.display = 'none', 1200);
+}
+
+/* Unlocks */
+function maybeUnlock(){
+  // Glas 2 (Index 1) und 3 (Index 2) per vorhandenen HTML-Containern
   if (!glasses[1].active && progressGoodFills >= UNLOCK_2){
-    glasses[1].el.classList.remove('hidden'); glasses[1].el.classList.add('popin');
+    glasses[1].el.classList.remove('hidden');
     glasses[1].active = true; showBanner();
-    setTimeout(()=>glasses[1].el.classList.remove('popin'), 500);
   }
   if (!glasses[2].active && progressGoodFills >= UNLOCK_3){
-    glasses[2].el.classList.remove('hidden'); glasses[2].el.classList.add('popin');
+    glasses[2].el.classList.remove('hidden');
     glasses[2].active = true; showBanner();
-    setTimeout(()=>glasses[2].el.classList.remove('popin'), 500);
+  }
+  // Ab Glas 4: bei 9,12,15,… (alle +3)
+  const needForNext = UNLOCK_3 + UNLOCK_STEP * Math.max(0, glasses.length - 3);
+  if (progressGoodFills >= needForNext){
+    // Zufällige Position innerhalb des sicheren Bereichs
+    const p = {
+      x: randi(RAND_BOX.xMin, RAND_BOX.xMax),
+      y: randi(RAND_BOX.yMin, RAND_BOX.yMax)
+    };
+    addGlass(p);
+    showBanner('Neues Glas!');
   }
 }
+
+/* Popup */
+function showPopup(text){ popupText.textContent = text; popup.style.display = 'flex'; }
+function hidePopup(){ popup.style.display = 'none'; }
+popupBtn.addEventListener('click', ()=>{
+  if (strikes >= 3){ hidePopup(); gameover.style.display='flex'; ended=true; }
+  else hidePopup();
+});
 
 /* Auffüllen – Sound SOFORT, dann Logik & Effekte */
 function handleFill(g){
   if (ended) return;
 
-  // Sound sofort
   try { sFill.currentTime = 0; sFill.play(); } catch(_) {}
 
   const prev = g.pct;
@@ -316,40 +342,51 @@ function handleFill(g){
   let emoji   = '';
   let malus   = '';
 
-  if (prev <= 33){        // unteres Drittel → Bonus + Fortschritt +1
+  if (prev <= 33){        // Unteres Drittel → Bonus + Fortschritt +1
     emoji = '😀';
-    tipAdd = BASE_EURO * TIP_RATE;   // 0.025
+    tipAdd = BASE_EURO * TIP_RATE;
     progressGoodFills++;
   } else if (prev <= 66){ // Mitte → neutral
     emoji = '😐';
-  } else {                // oberes Drittel → Malus −1 Fortschritt
+  } else {                // Oberes Drittel → Malus −1 Fortschritt
     emoji = '😠';
     if (progressGoodFills > 0) { progressGoodFills--; malus = 'Fortschritt −1'; }
   }
 
-  money += addBase + tipAdd;
+  // Assistent nimmt 50% Anteil
+  const share = assistantOn ? 0.5 : 1;
+  money += (addBase + tipAdd) * share;
   updateMoney();
 
-  // Effekte: mehr Abstand, nebeneinander, mit Rand-Korrektur
-  const moneyTxt = '+' + euro(addBase).replace(' €',' €');
-  const tipTxt   = tipAdd > 0 ? 'TIP +' + euro(tipAdd).replace(' €',' €') : null;
+  // Effekte: Geld/TIP/Emoji/Malus
+  const moneyTxt = '+' + euro(addBase * share).replace(' €',' €');
+  const tipTxt   = tipAdd > 0 ? 'TIP +' + euro(tipAdd * share).replace(' €',' €') : null;
   const malusTxt = malus || null;
   triFx(g.el, {moneyTxt, tipTxt, emojiTxt: emoji, malusTxt});
 
-  checkUnlocks();
+  maybeUnlock();
   render(g);
 }
 
-/* Eingabe */
-function wireGlass(g){ g.el.addEventListener('pointerdown', ()=>handleFill(g)); }
-glasses.forEach(wireGlass);
-
-/* Entleerungs-Loop */
+/* Entleerung + Assistent */
 let last = performance.now();
 function jitterLoop(g){
   g.jitter = (Math.random()*0.4 - 0.2) * g.speed;
   setTimeout(()=>jitterLoop(g), 7000 + Math.random()*5000);
 }
+
+/* Assistent füllt automatisch nach, wenn ≤30% */
+function assistantTick(){
+  if (!assistantOn || ended) return;
+  glasses.forEach(g=>{
+    if (!g.active) return;
+    if (g.pct <= 30){
+      // kleine Reaktionszeit für Fairness
+      setTimeout(()=>{ if (g.pct <= 30) handleFill(g); }, randi(250, 400));
+    }
+  });
+}
+
 glasses.forEach(jitterLoop);
 
 function loop(now){
@@ -370,6 +407,7 @@ function loop(now){
     render(g);
   });
 
+  assistantTick(); // Assistent prüfen
   requestAnimationFrame(loop);
 }
 
@@ -377,6 +415,7 @@ function loop(now){
 updateMoney();
 positionGlasses();
 updateSoundIcon();
+updateAssistantIcon();
 requestAnimationFrame(loop);
 </script>
 </body>
