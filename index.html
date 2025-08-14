@@ -7,42 +7,38 @@
 <style>
   html,body{height:100%;margin:0;background:#000;overflow:hidden;-webkit-tap-highlight-color:transparent}
   .stage{position:fixed;inset:0}
-  #bg{position:absolute;inset:0;width:100vw;height:100vh;object-fit:cover;object-position:center;user-select:none;pointer-events:none}
+  #bg{position:absolute;inset:0;width:100vw;height:100vh;object-fit:cover;user-select:none;pointer-events:none}
 
-  /* Geldanzeige */
-  .money{
-    position:absolute; top:12px; left:12px; z-index:4;
-    background:rgba(0,0,0,.45); color:#ffd700;
-    border:1px solid rgba(255,215,0,0.4); border-radius:10px;
-    padding:8px 14px; font:600 16px/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    backdrop-filter: blur(2px); box-shadow:0 2px 6px rgba(0,0,0,0.4);
-  }
-
-  /* Symbol-Leiste oben rechts */
-  .hud-right{
-    position:absolute; top:12px; right:12px; z-index:4;
-    display:flex; gap:8px;
-  }
-  .hudbtn{
-    width:42px; height:42px; display:flex; align-items:center; justify-content:center;
-    background:rgba(0,0,0,.45); color:#ffd700;
-    border:1px solid rgba(255,215,0,.4); border-radius:10px;
+  /* HUD */
+  .hud-top{position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:5}
+  .topbtn{
+    width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.45);color:#ffd700;
+    border:1px solid rgba(255,215,0,.4);border-radius:10px;
     font:22px/1 "Apple Color Emoji","Segoe UI Emoji",system-ui,sans-serif;
-    cursor:pointer; user-select:none; box-shadow:0 2px 6px rgba(0,0,0,.4);
+    cursor:pointer;user-select:none;box-shadow:0 2px 6px rgba(0,0,0,.4)
   }
-  .hudbtn.active{ background:rgba(0,128,0,.4); border-color:rgba(120,255,120,.5); }
+  .topbtn.active{background:rgba(0,128,0,.4);border-color:rgba(120,255,120,.5)}
+  .money{
+    position:absolute;top:12px;left:12px;z-index:5;
+    background:rgba(0,0,0,.45);color:#ffd700;
+    border:1px solid rgba(255,215,0,0.4);border-radius:10px;
+    padding:8px 14px;font:600 16px system-ui;
+    backdrop-filter:blur(2px)
+  }
 
-  /* Effekte (Geld, TIP, Emoji, Malus) */
-  .fx{
-    position:absolute; z-index:5; font:700 18px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    text-shadow:0 1px 2px rgba(0,0,0,.5); pointer-events:none; opacity:0;
-    transform: translate(-50%,0) translateZ(0); animation: rise 900ms ease-out forwards;
-    white-space:nowrap;
-  }
-  .fx.money{ color:#ffd700; font-size:16px; }
-  .fx.tip  { color:#56e39f; font-size:16px; }
-  .fx.emoji{ font-size:26px; }
-  .fx.malus{ color:#ef5350; font-size:16px; }
+  /* Energie-Balken */
+  .energy-bar{position:absolute;top:60px;left:12px;width:150px;height:16px;
+    background:#333;border:1px solid #999;border-radius:8px;overflow:hidden;z-index:5}
+  .energy-fill{height:100%;width:100%;background:linear-gradient(90deg,#00ff00,#ff0000)}
+
+  /* Effekte */
+  .fx{position:absolute;z-index:6;font:700 18px system-ui;text-shadow:0 1px 2px rgba(0,0,0,.5);
+    pointer-events:none;opacity:0;transform:translate(-50%,0);animation:rise 900ms ease-out forwards;white-space:nowrap}
+  .fx.money{color:#ffd700;font-size:16px}
+  .fx.tip{color:#56e39f;font-size:16px}
+  .fx.emoji{font-size:26px}
+  .fx.malus{color:#ef5350;font-size:16px}
   @keyframes rise{
     0%{opacity:0;transform:translate(-50%,10px)}
     12%{opacity:1;transform:translate(-50%,0)}
@@ -50,137 +46,171 @@
     100%{opacity:0;transform:translate(-50%,-60px)}
   }
 
-  /* Gläser */
-  .glass{
-    position:absolute;width:46px;height:70px;border:2px solid #d4aa00;border-radius:6px;
-    background:rgba(255,255,255,.04);overflow:hidden;box-shadow:0 0 6px rgba(0,0,0,.55);
-    z-index:3;touch-action:manipulation;cursor:pointer;
+  /* Level-Up */
+  .levelup{position:absolute;top:14px;left:50%;transform:translateX(-50%);
+    z-index:6;background:rgba(0,0,0,.55);color:#ffd700;
+    border:1px solid rgba(255,215,0,.45);border-radius:12px;
+    padding:10px 18px;font:700 16px system-ui;
+    display:none;animation:pop 900ms ease-out}
+  @keyframes pop{
+    0%{transform:translateX(-50%) scale(.8);opacity:0}
+    25%{transform:translateX(-50%) scale(1.05);opacity:1}
+    100%{transform:translateX(-50%) scale(1);opacity:1}
   }
+
+  /* Gläser */
+  .glass{position:absolute;width:46px;height:70px;border:2px solid #d4aa00;border-radius:6px;
+    background:rgba(255,255,255,.04);overflow:hidden;box-shadow:0 0 6px rgba(0,0,0,.55);
+    z-index:3;cursor:pointer}
+  .glass.low{border-color:#ffb300}
+  .glass.empty{border-color:#ef5350}
+  .glass.hidden{display:none}
   .fill{position:absolute;left:0;bottom:0;width:100%;height:100%;
     background:linear-gradient(180deg,#f7e17c,#e1b12c);transition:height .22s ease}
+
+  /* Popup & Game Over */
+  .popup,.gameover{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:10}
+  .popup{background:rgba(0,0,0,.5)}
+  .popup-content{background:#1b1f2a;color:#fff;padding:20px 24px;border-radius:10px;text-align:center}
+  .popup-content button{margin-top:12px;padding:8px 14px;border:none;border-radius:6px;background:#f6c356;color:#141821;font-weight:bold}
+  .gameover{background:#000;color:#fff;font:700 20px system-ui;text-align:center}
 </style>
 </head>
 <body>
-  <div class="stage" id="stage">
-    <img id="bg" src="bg.png" alt="">
-
-    <div class="money" id="money">0,00 €</div>
-
-    <!-- HUD oben rechts -->
-    <div class="hud-right">
-      <div class="hudbtn" id="eatBtn" title="Essen">🍽️</div>
-      <div class="hudbtn" id="drinkBtn" title="Bier trinken">🍺</div>
-      <div class="hudbtn" id="smokeBtn" title="Rauchen">🚬</div>
-      <div class="hudbtn" id="assistantBtn" title="Assistent">🤝</div>
-      <div class="hudbtn" id="soundBtn" title="Sound">🔊</div>
-    </div>
-
-    <!-- Start-Glas -->
-    <div class="glass" id="g0"><div class="fill"></div></div>
+<div class="stage" id="stage">
+  <img id="bg" src="bg.png" alt="">
+  <div class="money" id="money">0,00 €</div>
+  <div class="hud-top">
+    <div class="topbtn" id="eatBtn" title="Essen">🍖</div>
+    <div class="topbtn" id="drinkBtn" title="Bier trinken">🍺</div>
+    <div class="topbtn" id="smokeBtn" title="Rauchen">🚬</div>
+    <div class="topbtn" id="assistantToggle" title="Assistent">🤝</div>
+    <div class="topbtn" id="soundToggle" title="Sound">🔊</div>
   </div>
+  <div class="energy-bar"><div class="energy-fill" id="energyFill"></div></div>
+  <div class="levelup" id="levelup">Level Up – Neues Glas!</div>
+</div>
 
-  <!-- Sounds -->
-  <audio id="bgm" src="Tavern.mp3" loop></audio>
-  <audio id="fillSound" src="fill.mp3"></audio>
+<audio id="bgm" src="Tavern.mp3" loop></audio>
+<audio id="fillSound" src="fill.mp3"></audio>
+
+<div class="popup" id="popup">
+  <div class="popup-content">
+    <div id="popupText">Erste Abmahnung</div>
+    <button id="popupBtn">OK</button>
+  </div>
+</div>
+
+<div class="gameover" id="gameover">Game Over<br>du musst zum Arbeitsamt.</div>
 
 <script>
-const BASE_EURO = 0.25;
-const TIP_RATE = 0.10;
-let money = 0;
-let ended = false;
+const stage=document.getElementById('stage');
+const bg=document.getElementById('bg');
+const moneyEl=document.getElementById('money');
+const levelEl=document.getElementById('levelup');
+const popup=document.getElementById('popup');
+const popupText=document.getElementById('popupText');
+const popupBtn=document.getElementById('popupBtn');
+const gameover=document.getElementById('gameover');
+const energyFill=document.getElementById('energyFill');
+const bgm=document.getElementById('bgm');
+const fillSound=document.getElementById('fillSound');
+const soundToggle=document.getElementById('soundToggle');
+const assistantToggle=document.getElementById('assistantToggle');
+const eatBtn=document.getElementById('eatBtn');
+const drinkBtn=document.getElementById('drinkBtn');
+const smokeBtn=document.getElementById('smokeBtn');
 
-const moneyEl = document.getElementById('money');
-function euro(v){ return v.toFixed(2).replace('.', ',') + ' €'; }
-function updateMoney(){ moneyEl.textContent = euro(money); }
+let money=0,strikes=0,ended=false,assistantOn=false;
+let progressGoodFills=0,energy=100;
+const BASE_EURO=0.25,TIP_RATE=0.1,UNLOCK_STEP=3,MINDIST=70;
 
-const bgm = document.getElementById('bgm');
-const fillSound = document.getElementById('fillSound');
-bgm.volume = 0.5;
-fillSound.volume = 0.7;
-bgm.play().catch(()=>{});
-document.addEventListener('pointerdown',()=>{ if(bgm.paused) bgm.play().catch(()=>{}); },{once:true});
-
-document.getElementById('soundBtn').onclick = ()=>{
-  bgm.muted = !bgm.muted;
-  document.getElementById('soundBtn').textContent = bgm.muted ? '🔇' : '🔊';
-};
-
-let assistantOn = false;
-document.getElementById('assistantBtn').onclick = ()=>{
-  assistantOn = !assistantOn;
-  document.getElementById('assistantBtn').classList.toggle('active',assistantOn);
-};
-
-function spawnFx(text, className, x, y){
-  const s = document.createElement('div');
-  s.className = 'fx ' + className;
-  s.textContent = text;
-  s.style.left = x + 'px';
-  s.style.top  = y + 'px';
-  document.body.appendChild(s);
-  setTimeout(()=>s.remove(),900);
+function euro(v){return v.toFixed(2).replace('.',',')+' €'}
+function updateMoney(){moneyEl.textContent=euro(money)}
+function updateEnergy(){
+  energyFill.style.width=energy+'%';
+  energyFill.style.background=`linear-gradient(90deg, hsl(${energy*1.2},100%,40%), red)`;
+}
+function spawnFx(txt,cls,x,y){
+  const e=document.createElement('div');
+  e.className='fx '+cls;e.textContent=txt;
+  e.style.left=x+'px';e.style.top=y+'px';
+  document.body.appendChild(e);
+  setTimeout(()=>e.remove(),900);
+}
+function triFx(glassEl,{moneyTxt,tipTxt,emojiTxt,malusTxt}){
+  const r=glassEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height*0.15;
+  if(moneyTxt)spawnFx(moneyTxt,'money',cx-62,cy-14);
+  if(tipTxt)spawnFx(tipTxt,'tip',cx+62,cy-14);
+  if(emojiTxt)spawnFx(emojiTxt,'emoji',cx,cy-34);
+  if(malusTxt)spawnFx(malusTxt,'malus',cx,cy);
 }
 
-function triFx(glassEl, {moneyTxt, tipTxt, emojiTxt, malusTxt}){
-  const r = glassEl.getBoundingClientRect();
-  const cx = r.left + r.width/2;
-  const cy = r.top  + r.height*0.15;
-  const dx = 62, dyTop = 34, dyRow = 14;
-  if (moneyTxt) spawnFx(moneyTxt, 'money', cx - dx, cy - dyRow);
-  if (tipTxt)   spawnFx(tipTxt,   'tip',   cx + dx, cy - dyRow);
-  if (emojiTxt) spawnFx(emojiTxt, 'emoji', cx,      cy - dyTop);
-  if (malusTxt) spawnFx(malusTxt, 'malus', cx,      cy);
+function rand(min,max){return min+Math.random()*(max-min)}
+function randi(min,max){return Math.floor(rand(min,max))}
+function overlaps(p){return glasses.some(g=>{
+  const dx=g.pos.x-p.x,dy=g.pos.y-p.y;
+  return Math.sqrt(dx*dx+dy*dy)<MINDIST;
+})}
+
+const glasses=[];
+function addGlass(){
+  let p;
+  do{p={x:randi(20,80),y:randi(50,80)}}while(overlaps(p));
+  const el=document.createElement('div');el.className='glass';
+  const fill=document.createElement('div');fill.className='fill';
+  el.appendChild(fill);stage.appendChild(el);
+  const g={el,fillEl:fill,pos:p,pct:100,speed:rand(4,6),warned:false};
+  el.addEventListener('pointerdown',()=>handleFill(g));
+  glasses.push(g);positionGlass(g);
+  levelEl.style.display='block';setTimeout(()=>levelEl.style.display='none',1200);
 }
-
-const glass = {
-  el: document.getElementById('g0'),
-  fillEl: document.querySelector('#g0 .fill'),
-  pct: 100,
-  speed: 5
-};
-
-function renderGlass(){
-  glass.fillEl.style.height = glass.pct + '%';
+function positionGlass(g){
+  const sw=stage.clientWidth,sh=stage.clientHeight;
+  g.el.style.left=(g.pos.x/100*sw-23)+'px';
+  g.el.style.top=(g.pos.y/100*sh-45)+'px';
 }
-
-glass.el.onclick = ()=>{
-  if (ended) return;
-  fillSound.currentTime = 0;
-  fillSound.play();
-
-  let prev = glass.pct;
-  glass.pct = 100;
-  let addBase = BASE_EURO, tipAdd = 0, emoji = '', malus = '';
-
-  if (prev <= 33){
-    emoji = '😀';
-    tipAdd = BASE_EURO * TIP_RATE;
-  } else if (prev <= 66){
-    emoji = '😐';
-  } else {
-    emoji = '😠';
-  }
-
-  const share = assistantOn ? 0.5 : 1;
-  money += (addBase + tipAdd) * share;
-  updateMoney();
-
-  const moneyTxt = '+' + euro(addBase * share).replace(' €',' €');
-  const tipTxt   = tipAdd > 0 ? 'TIP +' + euro(tipAdd * share).replace(' €',' €') : null;
-  triFx(glass.el, {moneyTxt, tipTxt, emojiTxt: emoji, malusTxt: malus});
-  renderGlass();
-};
-
+function handleFill(g){
+  if(ended)return;
+  fillSound.currentTime=0;fillSound.play();
+  const prev=g.pct;g.pct=100;g.warned=false;
+  let addBase=BASE_EURO,tipAdd=0,emoji='',malus='';
+  if(prev<=33){emoji='😀';tipAdd=BASE_EURO*TIP_RATE;progressGoodFills++;}
+  else if(prev<=66){emoji='😐';}
+  else{emoji='😠';if(progressGoodFills>0){progressGoodFills--;malus='Fortschritt −1';}}
+  const share=assistantOn?0.5:1;
+  money+=(addBase+tipAdd)*share;updateMoney();
+  triFx(g.el,{moneyTxt:'+'+euro(addBase*share),tipTxt:tipAdd?('TIP +'+euro(tipAdd*share)):null,emojiTxt:emoji,malusTxt:malus});
+  if(progressGoodFills>0 && progressGoodFills%UNLOCK_STEP===0)addGlass();
+}
 function loop(){
-  if (!ended){
-    glass.pct = Math.max(0, glass.pct - glass.speed * 0.016);
-    renderGlass();
-    requestAnimationFrame(loop);
-  }
+  if(ended)return;
+  glasses.forEach(g=>{
+    g.pct=Math.max(0,g.pct-g.speed*0.02);
+    if(g.pct<=35 && g.pct>0)g.el.classList.add('low');else g.el.classList.remove('low');
+    if(g.pct<=0){g.el.classList.add('empty');
+      if(!g.warned){g.warned=true;strikes++;if(strikes>=3){showPopup('Kündigung');}}
+    }else g.el.classList.remove('empty');
+    g.fillEl.style.height=g.pct+'%';
+  });
+  energy=Math.max(0,energy-0.01);updateEnergy();
+  if(energy<=0){showPopup('Krankenhaus – Gefeuert');}
+  if(assistantOn){glasses.forEach(g=>{if(g.pct<=30)handleFill(g);})}
+  requestAnimationFrame(loop);
 }
-updateMoney();
-renderGlass();
-loop();
+function showPopup(t){popupText.textContent=t;popup.style.display='flex'}
+popupBtn.onclick=()=>{popup.style.display='none';if(strikes>=3||energy<=0){ended=true;gameover.style.display='flex'}};
+
+soundToggle.onclick=()=>{bgm.muted=!bgm.muted;soundToggle.textContent=bgm.muted?'🔇':'🔊'};
+assistantToggle.onclick=()=>{assistantOn=!assistantOn;assistantToggle.classList.toggle('active',assistantOn)};
+eatBtn.onclick=()=>{if(money>=1){money-=1;energy=Math.min(100,energy+20);updateMoney();updateEnergy();}};
+drinkBtn.onclick=()=>{if(money>=0.5){money-=0.5;energy=Math.min(100,energy+10);updateMoney();updateEnergy();}};
+smokeBtn.onclick=()=>{if(money>=0.2){money-=0.2;energy=Math.min(100,energy+5);updateMoney();updateEnergy();}};
+
+bgm.volume=0.5;bgm.play().catch(()=>{document.addEventListener('click',()=>bgm.play(),{once:true})});
+updateMoney();updateEnergy();
+addGlass();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
